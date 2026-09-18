@@ -38,7 +38,7 @@ areas of needed improvement and gaps in staff knowledge relating to ODHS Public 
 
 ## Local recovery setup
 
-Recovery work is on `portfolio-refresh`. The original application is not ready for a public, multi-user deployment. See [RECOVERY.md](RECOVERY.md) for verification and remaining work. The public portfolio demo is a separate static export with synthetic disposable data; its source is in `portfolio/` and `portfolio-site/`.
+Recovery work is on `portfolio-refresh`. The real application now supports isolated visitor workspaces with synthetic data, one-hour sessions, persisted learning and grading, and complete reset. See [BACKEND-READINESS.md](BACKEND-READINESS.md) for the current deployment status and verification. The earlier static presentation remains in `portfolio/` and `portfolio-site/` for reference.
 
 Use Node 24.13.0 and the pinned Yarn version through Corepack:
 
@@ -114,6 +114,10 @@ TofuTracker is available under the MIT license. Please check out the [LICENSE.md
 
 ---
 
-## Backend recovery in progress
+## Visitor mode
 
-The learning-session backend now derives scores and progress on the server and checks ownership before reads and writes. See [Backend readiness](BACKEND-READINESS.md) for the production-build checks and remaining authoring, grading, visitor-isolation and hosting work. The hosted URL still serves the static edition.
+For a local no-signup workspace, set `VISITOR_DEMO=true` and `NEXT_PUBLIC_VISITOR_DEMO=true` when building and starting the application. Set `NEXTAUTH_URL` to the same local origin, then open `/demo`. Leave email credentials unset. Each visitor receives independent fictional learning content and can explore learner, author and reviewer workflows. Reload preserves work; **Reset demo** deletes it. Sessions expire after one hour.
+
+Visitor administrators can edit only their own demo content and cannot manage other accounts. Request limits protect the shared demonstration. This mode is intended for disposable portfolio exploration, not real organization accounts or sensitive records.
+
+Run `verify:visitor-api` and `verify:visitor-browser` with `LOCAL_API_URL` set to your loopback origin. Database lifecycle tests and the full list of normal-mode regression commands are documented in [Backend readiness](BACKEND-READINESS.md). Deploy the tracked application with `corepack yarn deploy:visitor` after linking the dedicated personal Vercel project and provisioning its separate database and demo environment.
