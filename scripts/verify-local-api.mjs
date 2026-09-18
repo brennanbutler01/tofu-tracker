@@ -4,7 +4,9 @@ import { randomUUID } from 'node:crypto'
 import assert from 'node:assert/strict'
 
 const database = 'postgresql://demo:local-demo-only@127.0.0.1:5197/tofu_tracker'
-const origin = 'http://127.0.0.1:5196'
+const origin = process.env.LOCAL_API_URL || 'http://127.0.0.1:5196'
+if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(origin))
+    throw new Error('Only loopback servers may be tested')
 const prisma = new PrismaClient({
     adapter: new PrismaPg({ connectionString: database }),
 })

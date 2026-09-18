@@ -191,6 +191,7 @@ model GameSession {
   id              String           @id @default(cuid())
   started         DateTime         @default(now())
   currentQuestion Int              @default(1)
+  questionOrder   String[]         @default([])
   numberCorrect   Int              @default(0)
   numberAnswered  Int              @default(0)
   userId          String

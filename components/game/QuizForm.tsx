@@ -10,7 +10,6 @@ import { useCourseSessionCRUD } from '@/services/courseSession/useCourseSessionC
 import AnswerStatusAlert, {
     AnswerStatus,
 } from '@/components/game/AnswerStatusAlert'
-import { answersMatch } from '@/utils/answersMatch'
 import { SimpleAnswer } from '@/questions/SimpleAnswer'
 import { useGameTypeData } from '@/services/useGameTypeData'
 import { useActivitySessionCRUD } from '@/services/activitySession/useActivitySessionCRUD'
@@ -68,6 +67,7 @@ const QuizForm = ({
     const currentQuestion = session?.questions?.[session?.currentQuestion - 1]
     const currentAnswer = session?.answerHistory?.[session?.currentQuestion - 1]
     const [value, setValue] = useState<string | number>('')
+    const [submitting, setSubmitting] = useState(false)
 
     useEffect(() => {
         //if we have already answered this one and refreshed the page, we will make sure that we show it as answered
@@ -110,39 +110,30 @@ const QuizForm = ({
     const { gradeCourseAnswer } = useCourseSessionCRUD()
     const { gradeActivityAnswer } = useActivitySessionCRUD()
 
-    const evaluateAnswer = (answer: string): CorrectStatus =>
-        answersMatch({ answer, expected: correctAnswer })
-            ? CorrectStatus.TRUE
-            : CorrectStatus.FALSE
-
-    const submitAnswer = async (val: IQuizForm, questionType: QuestionType) => {
-        //set our status so we can see the answer alert
-        setAnswerStatus(
-            questionType === QuestionType.FREE_RESPONSE
-                ? AnswerStatus.NEEDS_GRADED
-                : evaluateAnswer(val.answer.toString()) === CorrectStatus.TRUE
-                ? AnswerStatus.CORRECT
-                : AnswerStatus.INCORRECT
-        )
-
-        //if we are doing free play, we'll use the createGameAnswer - else we will update our course with the course answer
-        await (type === 'free'
+    const submitAnswer = async (val: IQuizForm) => {
+        const result = await (type === 'free'
             ? createGameAnswer
             : type === 'course'
             ? gradeCourseAnswer
             : gradeActivityAnswer)({
             ...val,
             answer: val.answer.toString(),
-            isCorrect:
-                questionType === QuestionType.FREE_RESPONSE
-                    ? CorrectStatus.NEEDS_GRADED
-                    : evaluateAnswer(val.answer.toString()),
             questionId: currentQuestion?.id,
-            type: questionType,
         })
+        if (result === undefined) return
+        setAnswerStatus(
+            result === CorrectStatus.NEEDS_GRADED
+                ? AnswerStatus.NEEDS_GRADED
+                : result === CorrectStatus.TRUE
+                ? AnswerStatus.CORRECT
+                : AnswerStatus.INCORRECT
+        )
+        setQuestionStatus(QuestionStatus.ANSWERED)
     }
 
-    const disabled = { disabled: questionStatus === QuestionStatus.ANSWERED }
+    const disabled = {
+        disabled: submitting || questionStatus === QuestionStatus.ANSWERED,
+    }
 
     return (
         <StyledDiv>
@@ -154,8 +145,13 @@ const QuizForm = ({
                         answer: currentAnswer?.userAnswer?.answer,
                     }}
                     onFinish={async val => {
-                        setQuestionStatus(QuestionStatus.ANSWERED)
-                        await submitAnswer(val, currentQuestion?.type)
+                        if (submitting) return
+                        setSubmitting(true)
+                        try {
+                            await submitAnswer(val)
+                        } finally {
+                            setSubmitting(false)
+                        }
                     }}
                     layout={'vertical'}
                 >

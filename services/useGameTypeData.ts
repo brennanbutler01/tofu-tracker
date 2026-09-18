@@ -4,14 +4,19 @@ import { useSingleActivitySessionSWR } from './activitySession/useSingleActivity
 import { useSingularCourseSessionSWR } from './courseSession/useSingularCourseSessionSWR'
 import { useGamesSWR } from './games/useGamesSWR'
 
-export const useGameTypeData = ({ type }: QuizProps) => {
+export const useGameTypeData = ({ type = 'free' }: QuizProps) => {
     const {
         query: { id },
     } = useRouter()
 
-    const game = useGamesSWR(id as string)
-    const courseSession = useSingularCourseSessionSWR({ id: id as string })
-    const { data: activitySession } = useSingleActivitySessionSWR({})
+    const game = useGamesSWR(id as string, undefined, type === 'free')
+    const courseSession = useSingularCourseSessionSWR({
+        id: id as string,
+        enabled: type === 'course',
+    })
+    const { data: activitySession } = useSingleActivitySessionSWR({
+        enabled: type === 'activity',
+    })
 
     return type === 'free'
         ? game

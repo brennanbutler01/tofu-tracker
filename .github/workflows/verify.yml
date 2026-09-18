@@ -22,3 +22,20 @@ jobs:
       - run: corepack yarn build:portfolio
       - run: corepack yarn playwright install --with-deps chromium
       - run: corepack yarn test:portfolio
+      - run: corepack yarn local:setup
+      - run: corepack yarn build
+      - name: Verify database-backed learning workflows
+        env:
+          LOCAL_API_URL: http://127.0.0.1:5220
+          NEXTAUTH_URL: http://127.0.0.1:5220
+        run: |
+          corepack yarn start --hostname 127.0.0.1 --port 5220 > /tmp/tofu-tracker-learning.log 2>&1 &
+          app_pid=$!
+          trap 'kill "$app_pid"' EXIT
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:5220/api/auth/session > /dev/null; then break; fi
+            sleep 1
+          done
+          corepack yarn verify:local
+          corepack yarn verify:learning
+          corepack yarn verify:learning-browser

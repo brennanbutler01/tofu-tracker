@@ -1,44 +1,37 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { getSession } from 'next-auth/react'
-import { Methods } from '@/services/http'
 import prisma from '@/prisma/prisma'
-
-export default async function handler(
-    req: NextApiRequest,
-    res: NextApiResponse
-) {
-    const { method } = req
-    const { id } = req.query
-    const session = await getSession({ req })
-
-    if (session?.user?.userId) {
-        switch (method) {
-            case Methods.DELETE:
-                try {
-                    const unfinishedGames = await prisma.gameSession.delete({
-                        where: {
-                            id: id as string,
-                        },
-                        include: {
-                            questions: true,
-                        },
-                    })
-                    res.status(200).json(unfinishedGames)
-                } catch (err) {
-                    console.log(`Error deleting unfinished game: ${err}`)
-                    res.status(403).json({
-                        err: `Error deleting unfinished game. ${err}`,
-                    })
-                }
-                break
-            default:
-                res.status(403).json({
-                    err: `This api endpoint does not accept ${method} requests, only delete requests.`,
-                })
-        }
-    } else {
-        res.status(401).json({
-            err: 'This API endpoint requires authentication. Please sign-in and try again.',
+import { GameTypes } from '@prisma/client'
+import { apiHandler, identifier, RequestError } from 'server/apiHandler'
+export default apiHandler(['DELETE'], async (req, res, viewer) => {
+    const id = identifier.parse(req.query.id)
+    const deleted = await prisma.$transaction(async tx => {
+        await tx.$queryRaw`SELECT id FROM "GameSession" WHERE id = ${id} AND "userId" = ${viewer.userId} FOR UPDATE`
+        const game = await tx.gameSession.findFirst({
+            where: {
+                id,
+                userId: viewer.userId,
+                type: GameTypes.FREE,
+                isComplete: false,
+            },
+            include: {
+                questions: true,
+                answerHistory: { select: { answerOptionId: true } },
+            },
         })
-    }
-}
+        if (!game) throw new RequestError(404, 'Unfinished game not found')
+        await tx.gameSession.delete({ where: { id } })
+        await tx.answerOption.deleteMany({
+            where: {
+                id: {
+                    in: game.answerHistory.flatMap(a =>
+                        a.answerOptionId ? [a.answerOptionId] : []
+                    ),
+                },
+                questionId: null,
+                GameAnswer: { none: {} },
+                GradingCritique: { none: {} },
+            },
+        })
+        return game
+    })
+    res.json(deleted)
+})

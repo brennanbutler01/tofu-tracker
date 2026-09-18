@@ -113,3 +113,7 @@ Thanks to ODHS D15 APD for helping to specify requirements, being patient while 
 TofuTracker is available under the MIT license. Please check out the [LICENSE.md](LICENSE.md) for any questions.
 
 ---
+
+## Backend recovery in progress
+
+The learning-session backend now derives scores and progress on the server and checks ownership before reads and writes. See [Backend readiness](BACKEND-READINESS.md) for the production-build checks and remaining authoring, grading, visitor-isolation and hosting work. The hosted URL still serves the static edition.

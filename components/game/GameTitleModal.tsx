@@ -36,12 +36,12 @@ export const GameTitleModal = ({
                 onFinish={async val => {
                     setLoadingGame(true)
                     const id = cuid()
-                    await createGameSession({
+                    const createdId = await createGameSession({
                         id,
                         title: val.title,
                         questions,
                     })
-                    await push(`/play/game/${id}`)
+                    if (createdId) await push(`/play/game/${createdId}`)
                     setLoadingGame(false)
                 }}
             >

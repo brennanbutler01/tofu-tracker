@@ -1,3 +1,4 @@
+import { useRouter } from 'next/router'
 import {
     Button,
     Col,
@@ -42,7 +43,7 @@ export const CollapseWrapper = styled.div`
     }
 `
 
-const resultTypes: Record<QuizTypes, any> = {
+const resultTypes: Record<QuizTypes, { title: string }> = {
     free: {
         title: 'Game',
     },
@@ -56,11 +57,23 @@ const resultTypes: Record<QuizTypes, any> = {
 
 const QuizResults = ({ type = 'free' }: QuizProps) => {
     const session = useGameTypeData({ type })
-    const { data: activitySession, isLoading } = useSingleActivitySessionSWR({})
-    const [loading, setLoading] = useState(false)
+    const { query } = useRouter()
+    const courseSession = useSingularCourseSessionSWR({
+        id: typeof query.id === 'string' ? query.id : undefined,
+        enabled: type === 'course',
+    })
+    const { data: activitySession, isLoading } = useSingleActivitySessionSWR({
+        enabled: type === 'activity',
+    })
+    const [startingGame, setLoading] = useState(false)
+    const loading = startingGame || (type === 'activity' && isLoading)
     const breakpoint = Grid.useBreakpoint()
-
-    useEffect(() => setLoading(isLoading), [isLoading])
+    const pendingReview = session?.answerHistory.some(
+        answer => answer.isCorrect === CorrectStatus.NEEDS_GRADED
+    )
+    const passed =
+        type === 'free' ||
+        (type === 'activity' ? activitySession?.passed : courseSession?.passed)
 
     const resultButtons = (
         <Space direction={'horizontal'}>
@@ -79,10 +92,6 @@ const QuizResults = ({ type = 'free' }: QuizProps) => {
         </Space>
     )
 
-    /*TODO : make the status change for the course also - 
-  we aren't playing courses right now so this isn't important.
-  refactor this out into own fn later */
-
     return (
         <Row justify={'center'}>
             <ResultContainer>
@@ -94,15 +103,22 @@ const QuizResults = ({ type = 'free' }: QuizProps) => {
                             <Skeleton active loading={loading}>
                                 <Result
                                     status={
-                                        type === 'free' ||
-                                        type === 'course' ||
-                                        (type === 'activity' &&
-                                            activitySession?.passed)
+                                        pendingReview
+                                            ? 'info'
+                                            : passed
                                             ? 'success'
-                                            : 'error'
+                                            : 'warning'
                                     }
                                     title={`${resultTypes[type].title} Completed`}
-                                    subTitle={'See below to play again!'}
+                                    subTitle={
+                                        pendingReview
+                                            ? 'Some responses are waiting for review.'
+                                            : type === 'free'
+                                            ? 'Review your answers or start another practice game.'
+                                            : passed
+                                            ? 'You met the passing score.'
+                                            : 'This attempt did not meet the passing score. Review your answers and try again.'
+                                    }
                                     extra={resultButtons}
                                 />
                             </Skeleton>

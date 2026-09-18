@@ -1,3 +1,5 @@
+import { getServerSession } from 'next-auth'
+import { authOptions } from 'server/authOptions'
 import HeadLayout from '@/components/HeadLayout'
 import AppLayout from '@/components/AppLayout'
 import { PageHeader, Typography } from 'antd'
@@ -57,19 +59,19 @@ const StudyCourseSession = ({ session }: IStudyCourseSession) => {
 }
 export default StudyCourseSession
 
-export const getServerSideProps: GetServerSideProps = async context => {
-    let courseSession: FullCourseSession | null | undefined
-    const { id } = context.query
-
-    try {
-        courseSession = await getCourseSession(id as string)
-    } catch (e) {
-        console.log('Theres an error trying to get course session ', e)
-    }
-
-    return {
-        props: {
-            session: serialize(courseSession),
-        },
-    }
+export const getServerSideProps = async (
+    context: import('next').GetServerSidePropsContext
+) => {
+    const session = await getServerSession(
+        context.req,
+        context.res,
+        authOptions
+    )
+    if (!session?.user?.userId)
+        return { redirect: { destination: '/auth/signin', permanent: false } }
+    const id = context.query.id
+    if (typeof id !== 'string') return { notFound: true }
+    const record = await getCourseSession(id, session.user.userId)
+    if (!record) return { notFound: true }
+    return { props: { session: serialize(record) } }
 }

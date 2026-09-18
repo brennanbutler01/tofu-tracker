@@ -15,7 +15,9 @@
         "verify:browser": "node scripts/verify-local-browser.mjs",
         "build:portfolio": "next build portfolio-site --webpack",
         "test:portfolio": "playwright test --config=playwright.portfolio.config.ts",
-        "deploy:portfolio": "yarn build:portfolio && yarn test:portfolio && python3 scripts/deploy_portfolio.py"
+        "deploy:portfolio": "yarn build:portfolio && yarn test:portfolio && python3 scripts/deploy_portfolio.py",
+        "verify:learning": "node scripts/verify-learning-sessions.mjs",
+        "verify:learning-browser": "node scripts/verify-learning-browser.mjs"
     },
     "dependencies": {
         "@ant-design/icons": "4.8.3",

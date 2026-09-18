@@ -2,7 +2,8 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { Methods } from '@/services/http'
 import prisma from '@/prisma/prisma'
 import { getSession } from 'next-auth/react'
-import { Prisma } from '@prisma/client'
+import { Prisma, GameTypes } from '@prisma/client'
+import { apiHandler } from 'server/apiHandler'
 
 const gamesWithOptions = Prisma.validator<Prisma.GameSessionDefaultArgs>()({
     include: {
@@ -26,6 +27,7 @@ export const getUnfinishedGames = async (
     await prisma.gameSession.findMany({
         where: {
             userId,
+            type: GameTypes.FREE,
             AND: {
                 isComplete: {
                     equals: false,
@@ -40,6 +42,7 @@ export const getFinishedGames = async (userId: string) =>
     await prisma.gameSession.findMany({
         where: {
             userId,
+            type: GameTypes.FREE,
             AND: {
                 isComplete: {
                     equals: true,
@@ -52,36 +55,6 @@ export const getFinishedGames = async (userId: string) =>
         },
     })
 
-export default async function handler(
-    req: NextApiRequest,
-    res: NextApiResponse
-) {
-    const { method } = req
-    const session = await getSession({ req })
-
-    if (session?.user?.userId) {
-        switch (method) {
-            case Methods.GET:
-                try {
-                    const unfinishedGames = await getUnfinishedGames(
-                        session?.user?.userId
-                    )
-                    res.status(200).json(unfinishedGames)
-                } catch (e) {
-                    console.log(`Error getting unfinished games - ${e}`)
-                    res.status(403).json({
-                        err: `Error getting unfinished games - ${e}`,
-                    })
-                }
-                break
-            default:
-                res.status(403).json({
-                    err: `The api endpoint for unfinished games only accepts GET requests. ${method} requests aren't supported.`,
-                })
-        }
-    } else {
-        res.status(401).json({
-            err: 'You must be an authorized user to use this endpoint. Please sign in.',
-        })
-    }
-}
+export default apiHandler(['GET'], async (req, res, viewer) => {
+    res.json(await getUnfinishedGames(viewer.userId))
+})

@@ -1,3 +1,5 @@
+import { getServerSession } from 'next-auth'
+import { authOptions } from 'server/authOptions'
 import PlayActivityBreadcrumb from '@/components/activities/PlayActivityBreadcrumb'
 import AppLayout from '@/components/AppLayout'
 import Quiz from '@/components/game/Quiz'
@@ -68,18 +70,18 @@ const PlayActivity = ({ activitySession }: IPlayActivity) => {
 export default PlayActivity
 
 export const getServerSideProps = async (
-    context: GetServerSidePropsContext
+    context: import('next').GetServerSidePropsContext
 ) => {
-    const { query } = context
-    let activitySession: FullActivitySession | null = null
-    try {
-        activitySession = await getActivitySession(query.id as string)
-    } catch (err) {
-        console.log('There was an error getting activity ', err)
-    }
-    return {
-        props: {
-            activitySession: serialize(activitySession),
-        },
-    }
+    const session = await getServerSession(
+        context.req,
+        context.res,
+        authOptions
+    )
+    if (!session?.user?.userId)
+        return { redirect: { destination: '/auth/signin', permanent: false } }
+    const id = context.query.id
+    if (typeof id !== 'string') return { notFound: true }
+    const record = await getActivitySession(id, session.user.userId)
+    if (!record) return { notFound: true }
+    return { props: { activitySession: serialize(record) } }
 }

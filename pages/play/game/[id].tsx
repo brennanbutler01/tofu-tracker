@@ -1,3 +1,5 @@
+import { getServerSession } from 'next-auth'
+import { authOptions } from 'server/authOptions'
 import {
     Breadcrumb,
     Grid,
@@ -95,20 +97,19 @@ const Game = ({ game }: IGame) => {
 export default Game
 
 // noinspection JSUnusedGlobalSymbols
-export const getServerSideProps: GetServerSideProps = async context => {
-    const { id } = context.query
-    let game: GameWithFullOptions | null = null
-    const session = await getSession(context)
-    try {
-        game = await getGameWithFullOptions(id as string)
-    } catch (err) {
-        console.log(`Error fetching game: ${game}`)
-    }
-
-    return {
-        props: {
-            game: serialize(game),
-            session,
-        },
-    }
+export const getServerSideProps = async (
+    context: import('next').GetServerSidePropsContext
+) => {
+    const session = await getServerSession(
+        context.req,
+        context.res,
+        authOptions
+    )
+    if (!session?.user?.userId)
+        return { redirect: { destination: '/auth/signin', permanent: false } }
+    const id = context.query.id
+    if (typeof id !== 'string') return { notFound: true }
+    const record = await getGameWithFullOptions(id, session.user.userId)
+    if (!record) return { notFound: true }
+    return { props: { game: serialize(record), session } }
 }

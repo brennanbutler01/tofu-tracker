@@ -1,26 +1,18 @@
-import { Prisma } from '@prisma/client'
 import { http } from '../http'
-
-class ActivitySessionService {
-    private ACTIVITY_SESSION_ENDPOINT = '/activitySession/'
-    private singularActivitySession = (id: string) => `/activitySession/${id}`
-
-    createActivitySession = async (
-        session: Prisma.ActivitySessionCreateInput
-    ) =>
-        await http.post<Prisma.ActivitySessionCreateInput>(
-            this.ACTIVITY_SESSION_ENDPOINT,
-            session
-        )
-
-    updateActivitySession = async (
-        session: Prisma.ActivitySessionUpdateInput
-    ) =>
-        await http.put<Prisma.ActivitySessionUpdateInput>(
-            this.singularActivitySession(session?.id as string),
-            session
-        )
+import type { FullActivitySession } from 'server/sessionShapes'
+import type { GameAction } from 'server/gameSessions'
+export const activitySessionService = {
+    createActivitySession: (input: { activityId: string }) =>
+        http.request<FullActivitySession>({
+            method: 'POST',
+            url: '/activitySession',
+            data: input,
+        }),
+    updateActivitySession: (id: string, action: GameAction) =>
+        http.request<FullActivitySession>({
+            method: 'PUT',
+            url: `/activitySession/${id}`,
+            data: action,
+        }),
 }
-
-const activitySessionService = new ActivitySessionService()
 export default activitySessionService

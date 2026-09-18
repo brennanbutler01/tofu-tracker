@@ -1,16 +1,21 @@
-import { Prisma } from '@prisma/client'
 import { http } from '../http'
-
-class GameService {
-    private GAME_ENDPOINT = '/games'
-
-    createGameSession = async (game: Prisma.GameSessionCreateInput) =>
-        await http.post<Prisma.GameSessionCreateInput>(this.GAME_ENDPOINT, game)
-    updateGameSession = async (game: Prisma.GameSessionUpdateInput) =>
-        await http.put<Prisma.GameSessionUpdateInput>(
-            `${this.GAME_ENDPOINT}/${game.id}`,
-            game
-        )
+import type { GameWithFullOptions } from 'server/gameShapes'
+import type { GameAction } from 'server/gameSessions'
+export const gameService = {
+    createGameSession: (game: {
+        id?: string
+        title: string
+        questionIds: string[]
+    }) =>
+        http.request<GameWithFullOptions>({
+            method: 'POST',
+            url: '/games',
+            data: game,
+        }),
+    updateGameSession: (id: string, action: GameAction) =>
+        http.request<GameWithFullOptions>({
+            method: 'PUT',
+            url: `/games/${id}`,
+            data: action,
+        }),
 }
-
-export const gameService = new GameService()

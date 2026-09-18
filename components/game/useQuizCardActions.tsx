@@ -38,14 +38,16 @@ const useQuizCardActions = ({
     const { advanceActivityGameQuestion } = useActivitySessionCRUD()
 
     const advanceQuestion = async () => {
-        setQuestionStatus(QuestionStatus.WAITING)
-        setAnswerStatus(AnswerStatus.BLANK)
-        setViewFeedback(false)
-        await (type === 'free'
+        const advanced = await (type === 'free'
             ? advanceGameQuestion
             : type === 'course'
             ? advanceCourseQuestion
             : advanceActivityGameQuestion)()
+        if (advanced) {
+            setQuestionStatus(QuestionStatus.WAITING)
+            setAnswerStatus(AnswerStatus.BLANK)
+            setViewFeedback(false)
+        }
     }
 
     const session = useGameTypeData({ type })
