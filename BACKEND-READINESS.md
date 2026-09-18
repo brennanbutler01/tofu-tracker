@@ -1,6 +1,6 @@
 # Tracker backend recovery
 
-The hosted site still serves the prior static demonstration. Do not replace it with this backend until the remaining permission review, visitor isolation, deployment and hosted verification are complete.
+The real Next.js application is deployed at https://tofu-tracker-demo.vercel.app with a dedicated Neon free PostgreSQL database. Runtime commit `efdf73f`, deployment `dpl_ENVX7huu3Sz8kLA8DziJQom6DUfa`. All 29 hosted API checks and desktop/mobile learning, feedback, grading, authoring, persistence and reset workflows pass.
 
 ## Learning-session repair
 
@@ -66,10 +66,8 @@ Six database integration cases, 29 HTTP checks, and desktop/mobile visitor workf
 
 To exercise visitor mode locally, set `VISITOR_DEMO=true`, `NEXT_PUBLIC_VISITOR_DEMO=true`, and the matching `NEXTAUTH_URL` for both build and server. Run `verify:visitor-workspace` against the disposable local database, then `verify:visitor-api`, `verify:visitor-browser`, and `verify:visitor-lifecycle` against the running application. The lifecycle suite is deliberately local-only. The API/browser suites also allow the dedicated public demo hostname.
 
-## Remaining
+## Publication verification
 
-- Scan final publication source/history and browser assets.
-- Deploy the real application to the personal Vercel project with a dedicated free database, then repeat hosted API and desktop/mobile verification.
-- Confirm continuous integration for the visitor implementation.
+Source and full-history scans plus exact comparisons against previously exposed credentials found no matches. Eleven hosted HTML/script assets were checked against both historical credentials and the new demo authentication/database secrets, with no matches. GitHub verification run `35349150278` for runtime commit `efdf73f` passed, including both ordinary and visitor database/browser suites.
 
-The hosted site still serves the static edition. Real email sign-in remains unverified and needs separately provisioned credentials. Historical credentials are never reused.
+Expiry, budget exhaustion and concurrent reset were verified against the disposable local database; hosted tests cover cookie authentication, isolation and reset without modifying the hosted clock or database directly. Real email sign-in remains unverified and needs separately provisioned credentials. Historical credentials are never reused.

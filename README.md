@@ -1,6 +1,6 @@
 # TofuTracker
 
-**[Try the live demo](https://tofu-tracker-demo.vercel.app)** · **[Reviewer code tour](REVIEW.md)**
+**[Try the live demo](https://tofu-tracker-demo.vercel.app/demo)** · **[Reviewer code tour](REVIEW.md)**
 
 Practice a short course, review a written response, and watch learner results update. The public demo uses fictional, disposable data and needs no signup.
 
