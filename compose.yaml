@@ -1,0 +1,19 @@
+name: tofu-tracker-local
+services:
+    database:
+        image: postgres:16
+        environment:
+            POSTGRES_USER: demo
+            POSTGRES_PASSWORD: local-demo-only
+            POSTGRES_DB: tofu_tracker
+        ports:
+            - '127.0.0.1:5197:5432'
+        volumes:
+            - tracker-data:/var/lib/postgresql/data
+        healthcheck:
+            test: ['CMD-SHELL', 'pg_isready -U demo -d tofu_tracker']
+            interval: 2s
+            timeout: 3s
+            retries: 20
+volumes:
+    tracker-data:

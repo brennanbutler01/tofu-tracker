@@ -1,0 +1,34 @@
+@import 'antd/lib/style/themes/default.less';
+@import 'antd/dist/antd.less'; // Import Ant Design styles
+@import (inline) 'global.css';
+@white: #fff;
+@yellow: #ffd900;
+@bg: #282833;
+@magenta: #d211fe;
+@primary: #52e3c2;
+
+@primary-color: @primary; // primary color for all components
+@link-color: #0781ff; // link color
+@success-color: @primary; // success state color
+@warning-color: @yellow; // warning state color
+@error-color: #ff4b12; // error state color
+@font-size-base: 14px; // major text font size
+@heading-color: @white; // heading text color
+@text-color: fade(@white, 85%); // major text color
+@text-color-secondary: fade(@white, 45%); // secondary text color
+@disabled-color: fade(@white, 25%); // disable state color
+@border-radius-base: 2px; // major border radius
+@border-color-base: #6e7288; // major border color
+@box-shadow-base: 0 3px 6px -4px rgba(0, 0, 0, 0.12),
+    0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 9px 28px 8px rgba(0, 0, 0, 0.05); // major shadow for layers
+@font-family: 'Merriweather', serif; //main font for page
+@body-background: @bg; //base background for most components
+@layout-body-background: @bg; //layout content background
+@layout-header-background: @bg; //layout header background
+@layout-footer-background: @bg; //layout footer background
+@component-background: @bg; //backgrounds when body isn't
+@btn-primary-color: @bg; //text for primary button
+@btn-font-weight: 700; //font weight for all buttons
+@checkbox-check-color: #320671; //background and check color for our checkboxes
+@text-selection-bg: @magenta;
+@segmented-selected-bg: #32323e;

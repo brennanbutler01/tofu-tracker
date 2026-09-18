@@ -1,0 +1,42 @@
+:root {
+    --title-font: 'Montserrat', sans-serif;
+    --tofu-green-background: rgb(0, 60, 42);
+    --tofu-brand-1: #282833;
+    --tofu-brand-2: #32323e;
+    --tofu-brand-3: #393945;
+    --tofu-brand-4: #40424f;
+    --tofu-brand-5: #4d505f;
+}
+
+.ant-typography-h1,
+.ant-typography-h2,
+.ant-typography-h3,
+.ant-typography-h4,
+.ant-typography-h5 {
+    font-family: var(--title-font) !important;
+}
+
+.ant-modal-title {
+    font-family: var(--title-font);
+    font-weight: 700;
+    text-align: center;
+}
+
+.ant-modal-header {
+    padding: 8px 24px;
+    border-bottom: 1px solid var(--tofu-brand-5) !important;
+}
+
+.ant-modal-footer {
+    background-color: var(--tofu-brand-2) !important;
+    border-top-color: var(--tofu-brand-5) !important;
+}
+
+.ant-tabs-dropdown-menu-item:hover {
+    background: var(--tofu-brand-2) !important;
+}
+
+.ant-menu-item:active,
+.ant-menu-submenu-title:active {
+    background: var(--tofu-brand-4) !important;
+}

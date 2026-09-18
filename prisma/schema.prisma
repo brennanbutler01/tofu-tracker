@@ -1,0 +1,417 @@
+generator client {
+  provider        = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id                String              @id @default(cuid())
+  name              String?
+  email             String?             @unique
+  emailVerified     DateTime?
+  image             String?
+  role              Roles               @default(USER)
+  team              Teams               @default(UNASSIGNED)
+  accounts          Account[]
+  ActivitySession   ActivitySession[]
+  Admin             Admin[]
+  CourseSession     CourseSession[]
+  deck              Deck[]
+  GameAnswer        GameAnswer[]
+  GameSession       GameSession[]
+  GradingCritique   GradingCritique[]
+  GradingSession    GradingSession[]
+  QuestionComments  QuestionComments[]
+  QuestionRating    QuestionRating[]
+  QuestionResources QuestionResources[]
+  ResourceComments  ResourceComments[]
+  sessions          Session[]
+  UserFeedback      UserFeedback[]
+}
+
+model Admin {
+  id     String @id @default(cuid())
+  email  String @unique
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model Index {
+  id    String  @id @default(cuid())
+  name  String?
+  email String? @unique
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Deck {
+  id        String     @id @default(cuid())
+  title     String
+  created   DateTime   @default(now())
+  userId    String
+  tags      String[]
+  archived  Boolean    @default(false)
+  courseId  String?
+  user      User       @relation(fields: [userId], references: [id])
+  questions Question[]
+  Course    Course[]
+}
+
+model Question {
+  id                 String                    @id @default(cuid())
+  question           String
+  created            DateTime                  @default(now())
+  deckId             String?
+  type               QuestionType
+  simpleResponseType SimpleResponseInputTypes?
+  explanation        String?
+  archived           Boolean                   @default(false)
+  correctAnswer      String
+  activityId         String?
+  Activity           Activity?                 @relation(fields: [activityId], references: [id])
+  deck               Deck?                     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  ActivityQuestion   ActivityQuestion[]
+  options            AnswerOption[]
+  GameAnswer         GameAnswer[]
+  feedback           QuestionFeedback?
+  GameSession        GameSession[]
+}
+
+model QuestionFeedback {
+  id         String              @id @default(cuid())
+  questionId String              @unique
+  Question   Question            @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  comments   QuestionComments[]
+  rating     QuestionRating[]
+  resources  QuestionResources[]
+}
+
+model QuestionResources {
+  id               String             @id @default(cuid())
+  location         String
+  title            String
+  description      String
+  likes            String[]
+  dislikes         String[]
+  userId           String
+  tags             String[]
+  feedbackId       String
+  created          DateTime           @default(now())
+  updatedAt        DateTime           @default(now())
+  questionFeedback QuestionFeedback   @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+  user             User               @relation(fields: [userId], references: [id])
+  comments         ResourceComments[]
+}
+
+model ResourceComments {
+  id               String            @id @default(cuid())
+  resourceId       String
+  comment          String
+  userId           String
+  likes            String[]
+  dislikes         String[]
+  created          DateTime          @default(now())
+  updatedAt        DateTime          @default(now())
+  parentComment    String?
+  childrenComments String[]
+  resource         QuestionResources @relation(fields: [resourceId], references: [id])
+  user             User              @relation(fields: [userId], references: [id])
+}
+
+model QuestionRating {
+  id                 String           @id @default(cuid())
+  questionFeedbackId String
+  rating             Float
+  userId             String
+  questionFeedback   QuestionFeedback @relation(fields: [questionFeedbackId], references: [id], onDelete: Cascade)
+  user               User             @relation(fields: [userId], references: [id])
+}
+
+model QuestionComments {
+  id                 String           @id @default(cuid())
+  userId             String
+  comment            String
+  created            DateTime         @default(now())
+  updatedAt          DateTime         @default(now())
+  parentComment      String?
+  questionFeedbackId String
+  dislikes           String[]
+  likes              String[]
+  childrenComments   String[]
+  questionFeedback   QuestionFeedback @relation(fields: [questionFeedbackId], references: [id], onDelete: Cascade)
+  user               User             @relation(fields: [userId], references: [id])
+}
+
+model AnswerOption {
+  id              String            @id @default(cuid())
+  answer          String
+  created         DateTime          @default(now())
+  questionId      String?
+  question        Question?         @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  GameAnswer      GameAnswer[]
+  GradingCritique GradingCritique[]
+}
+
+model GameSession {
+  id              String           @id @default(cuid())
+  started         DateTime         @default(now())
+  currentQuestion Int              @default(1)
+  numberCorrect   Int              @default(0)
+  numberAnswered  Int              @default(0)
+  userId          String
+  completedAt     DateTime?
+  isComplete      Boolean          @default(false)
+  updatedAt       DateTime         @default(now())
+  type            GameTypes
+  title           String
+  user            User             @relation(fields: [userId], references: [id])
+  ActivitySession ActivitySession?
+  CourseSession   CourseSession?
+  answerHistory   GameAnswer[]
+  questions       Question[]
+}
+
+model GradingCritique {
+  id           String             @id @default(cuid())
+  userAnswerId String
+  gradedById   String
+  critique     String
+  created      DateTime           @default(now())
+  gradedBy     User               @relation(fields: [gradedById], references: [id])
+  userAnswer   AnswerOption       @relation(fields: [userAnswerId], references: [id])
+  resources    CritiqueResource[]
+  GameAnswer   GameAnswer?
+}
+
+model CritiqueResource {
+  id          String          @id @default(cuid())
+  critiqueId  String
+  location    String
+  title       String
+  description String
+  tags        String[]
+  created     DateTime        @default(now())
+  updatedAt   DateTime        @default(now())
+  critique    GradingCritique @relation(fields: [critiqueId], references: [id])
+}
+
+model GameAnswer {
+  id               String           @id @default(cuid())
+  created          DateTime         @default(now())
+  isCorrect        CorrectStatus
+  critiqueId       String?          @unique
+  gameSessionId    String?
+  questionId       String
+  answerOptionId   String?
+  gradingSessionId String?
+  playerId         String
+  updatedAt        DateTime         @default(now())
+  userAnswer       AnswerOption?    @relation(fields: [answerOptionId], references: [id])
+  critique         GradingCritique? @relation(fields: [critiqueId], references: [id])
+  GameSession      GameSession?     @relation(fields: [gameSessionId], references: [id], onDelete: Cascade)
+  GradingSession   GradingSession?  @relation(fields: [gradingSessionId], references: [id])
+  player           User             @relation(fields: [playerId], references: [id])
+  question         Question         @relation(fields: [questionId], references: [id])
+}
+
+model GradingSession {
+  id             String       @id @default(cuid())
+  created        DateTime     @default(now())
+  currentAnswer  String
+  isComplete     Boolean      @default(false)
+  gradedById     String
+  gradedBy       User         @relation(fields: [gradedById], references: [id])
+  answersToGrade GameAnswer[]
+}
+
+model Course {
+  id             String          @id @unique @default(cuid())
+  created        DateTime        @default(now())
+  percentToPass  Int             @default(90)
+  updatedAt      DateTime        @default(now())
+  level          CourseLevel     @default(ALL)
+  preReqs        String[]
+  title          String
+  description    String
+  CourseOrder    CourseOrder[]
+  CourseSession  CourseSession[]
+  decks          Deck[]
+  learningTracks LearningTrack[]
+}
+
+model Activity {
+  id              String            @id @unique @default(cuid())
+  title           String
+  description     String
+  created         DateTime          @default(now())
+  updatedAt       DateTime          @default(now())
+  questionOrder   String[]
+  displayOnMain   Boolean           @default(false)
+  percentToPass   Int               @default(90)
+  ActivitySession ActivitySession[]
+  questions       Question[]
+}
+
+model ActivitySession {
+  id            String      @id @unique @default(cuid())
+  created       DateTime    @default(now())
+  updatedAt     DateTime    @default(now())
+  userId        String
+  activityId    String
+  isComplete    Boolean     @default(false)
+  passed        Boolean     @default(false)
+  gameSessionId String      @unique
+  activity      Activity    @relation(fields: [activityId], references: [id])
+  gameSession   GameSession @relation(fields: [gameSessionId], references: [id])
+  user          User        @relation(fields: [userId], references: [id])
+}
+
+model ActivityQuestion {
+  id         String   @id @unique @default(cuid())
+  questionId String
+  index      Int
+  question   Question @relation(fields: [questionId], references: [id])
+}
+
+model CourseSession {
+  id            String      @id @default(cuid())
+  created       DateTime    @default(now())
+  updatedAt     DateTime    @default(now())
+  courseId      String
+  gameSessionId String      @unique
+  userId        String?
+  attempt       Int         @default(0)
+  isComplete    Boolean     @default(false)
+  passed        Boolean     @default(false)
+  course        Course      @relation(fields: [courseId], references: [id])
+  gameSession   GameSession @relation(fields: [gameSessionId], references: [id])
+  user          User?       @relation(fields: [userId], references: [id])
+}
+
+model CourseOrder {
+  id              String         @id @default(cuid())
+  created         DateTime       @default(now())
+  updatedAt       DateTime       @default(now())
+  courseId        String
+  index           Int
+  learningTrackId String?
+  course          Course         @relation(fields: [courseId], references: [id])
+  learningTrack   LearningTrack? @relation(fields: [learningTrackId], references: [id], onDelete: Cascade)
+}
+
+model LearningTrack {
+  id          String        @id @default(cuid())
+  created     DateTime      @default(now())
+  updatedAt   DateTime      @default(now())
+  title       String
+  description String
+  courseOrder CourseOrder[]
+  courses     Course[]
+}
+
+model UserFeedback {
+  id         String           @id
+  created    DateTime         @default(now())
+  updatedAt  DateTime         @default(now())
+  subject    String
+  suggestion String
+  type       FeedbackType
+  severity   FeedbackSeverity
+  user       User             @relation(fields: [userId], references: [id])
+  userId     String
+}
+
+enum FeedbackSeverity {
+  MINIMUM
+  MODERATE
+  SEVERE
+}
+
+enum FeedbackType {
+  BUG
+  QUESTION
+  TOPIC
+  FEATURE
+  IMPROVEMENT
+}
+
+enum GameTypes {
+  FREE
+  COURSE
+  ACTIVITY
+}
+
+enum Teams {
+  ADMIN
+  ELIGIBILITY
+  CASE_MANAGEMENT
+  UNASSIGNED
+  LEADERSHIP
+}
+
+enum CorrectStatus {
+  TRUE
+  FALSE
+  NEEDS_GRADED
+}
+
+enum Roles {
+  ADMIN
+  USER
+}
+
+enum QuestionType {
+  TRUE_FALSE
+  MULTIPLE_CHOICE
+  FREE_RESPONSE
+  SIMPLE_RESPONSE
+}
+
+enum SimpleResponseInputTypes {
+  TEXT
+  NUMBER
+  CURRENCY
+}
+
+enum CourseLevel {
+  ALL
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}

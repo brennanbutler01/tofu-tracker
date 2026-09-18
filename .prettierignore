@@ -1,0 +1,4 @@
+#app
+pages/_app.tsx
+.next/*
+node_modules/*
