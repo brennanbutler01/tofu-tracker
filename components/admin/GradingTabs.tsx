@@ -122,7 +122,13 @@ const GradingTabs = ({
                                     title={
                                         <Space>
                                             <a
-                                                href={`https://${item.location}`}
+                                                href={
+                                                    item.location.startsWith(
+                                                        'https://'
+                                                    )
+                                                        ? item.location
+                                                        : undefined
+                                                }
                                             >
                                                 {item.title}
                                             </a>

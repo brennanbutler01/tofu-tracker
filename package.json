@@ -17,7 +17,8 @@
         "test:portfolio": "playwright test --config=playwright.portfolio.config.ts",
         "deploy:portfolio": "yarn build:portfolio && yarn test:portfolio && python3 scripts/deploy_portfolio.py",
         "verify:learning": "node scripts/verify-learning-sessions.mjs",
-        "verify:learning-browser": "node scripts/verify-learning-browser.mjs"
+        "verify:learning-browser": "node scripts/verify-learning-browser.mjs",
+        "verify:grading": "node scripts/verify-grading.mjs"
     },
     "dependencies": {
         "@ant-design/icons": "4.8.3",

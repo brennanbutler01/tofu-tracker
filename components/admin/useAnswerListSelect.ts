@@ -54,7 +54,7 @@ export const useAnswerListSelect = () => {
         const id = await createGradingSession({
             answersToGrade: selectedKeys.map(el => el.toString()),
         })
-        await push(`/admin/grade/${id}`)
+        if (id) await push(`/admin/grade/${id}`)
         setLoading(false)
     }
 

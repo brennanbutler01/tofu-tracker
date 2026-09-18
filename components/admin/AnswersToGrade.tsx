@@ -1,3 +1,4 @@
+import PendingReviews from './PendingReviews'
 import { Button, Empty, Grid, List, Skeleton } from 'antd'
 import { useGradeAnswersSWR } from '@/services/toGrade/useGradeAnswersSWR'
 import styled from 'styled-components'
@@ -60,6 +61,7 @@ function AnswersToGrade() {
     const breakpoint = Grid.useBreakpoint()
     return (
         <ListContainer>
+            <PendingReviews />
             <Skeleton active loading={!answersToGrade}>
                 <List
                     loading={!answersToGrade || loading}

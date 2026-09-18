@@ -43,6 +43,7 @@ const GradingResourceForm = ({ next, loading, setLoading }: IGradingTabs) => {
                     loading={loading}
                     htmlType={'submit'}
                     key={'create'}
+                    aria-label='Create resource'
                     form={'grading-resource-form'}
                 >
                     Create
@@ -55,7 +56,7 @@ const GradingResourceForm = ({ next, loading, setLoading }: IGradingTabs) => {
                 name={'grading-resource-form'}
                 onFinish={async val => {
                     setLoading(true)
-                    await createGradingResource({
+                    const saved = await createGradingResource({
                         tags: val.tags,
                         location: val.location,
                         title: val.title,
@@ -63,9 +64,11 @@ const GradingResourceForm = ({ next, loading, setLoading }: IGradingTabs) => {
                         gameAnswerId: current?.id as string,
                         critiqueId: current?.critiqueId as string,
                     })
-                    form.resetFields()
                     setLoading(false)
-                    next()
+                    if (saved) {
+                        form.resetFields()
+                        next()
+                    }
                 }}
             >
                 <Skeleton active loading={loading}>

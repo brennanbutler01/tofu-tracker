@@ -39,3 +39,4 @@ jobs:
           corepack yarn verify:local
           corepack yarn verify:learning
           corepack yarn verify:learning-browser
+          corepack yarn verify:grading

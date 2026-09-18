@@ -1,3 +1,4 @@
+import { refreshAssessmentResults } from './assessmentResults'
 import prisma from '@/prisma/prisma'
 import { CorrectStatus, GameTypes, Prisma, QuestionType } from '@prisma/client'
 import { z } from 'zod'
@@ -94,35 +95,7 @@ export async function applyGameAction(
             },
             ...gameWithQuestionsOptions,
         })
-        if (complete) {
-            const activity = await tx.activitySession.findUnique({
-                where: { gameSessionId: id },
-                include: { activity: true },
-            })
-            const course = await tx.courseSession.findUnique({
-                where: { gameSessionId: id },
-                include: { course: true },
-            })
-            const score = game.questions.length
-                ? (game.numberCorrect / game.questions.length) * 100
-                : 0
-            if (activity)
-                await tx.activitySession.update({
-                    where: { id: activity.id },
-                    data: {
-                        isComplete: true,
-                        passed: score >= activity.activity.percentToPass,
-                    },
-                })
-            if (course)
-                await tx.courseSession.update({
-                    where: { id: course.id },
-                    data: {
-                        isComplete: true,
-                        passed: score >= course.course.percentToPass,
-                    },
-                })
-        }
+        if (complete) await refreshAssessmentResults(tx, id)
         return orderGameQuestions(updated)
     }
     if (action.questionId !== current.id)

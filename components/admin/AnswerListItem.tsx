@@ -48,7 +48,7 @@ const AnswerListItem = ({
                         const id = await createGradingSession({
                             answersToGrade: [item.id],
                         })
-                        await push(`admin/grade/${id}`)
+                        if (id) await push(`/admin/grade/${id}`)
                         setLoading(false)
                     }}
                 >

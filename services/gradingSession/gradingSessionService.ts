@@ -1,15 +1,18 @@
-import { Prisma } from '@prisma/client'
+import type { FullGradingSession } from '@/server/gradingShapes'
+import type { GradingAction } from '@/server/gradingSessions'
 import { http } from '../http'
-
 class GradingSessionService {
-    private GRADING_SESSION_ENDPOINT = '/toGrade/session'
-    private singularSession = (id: string) =>
-        `${this.GRADING_SESSION_ENDPOINT}/${id}`
-
-    createGradingSession = async (session: Prisma.GradingSessionCreateInput) =>
-        await http.post(this.GRADING_SESSION_ENDPOINT, session)
-    updateGradingSession = async (session: Prisma.GradingSessionUpdateInput) =>
-        await http.put(this.singularSession(session.id as string), session)
+    createGradingSession = (answerIds: string[]) =>
+        http.request<FullGradingSession>({
+            method: 'POST',
+            url: '/toGrade/session',
+            data: { answerIds },
+        })
+    updateGradingSession = (id: string, action: GradingAction) =>
+        http.request<FullGradingSession>({
+            method: 'PUT',
+            url: `/toGrade/session/${id}`,
+            data: action,
+        })
 }
-
 export const gradingSessionService = new GradingSessionService()

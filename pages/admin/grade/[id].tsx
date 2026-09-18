@@ -83,15 +83,16 @@ const Grade = ({ gradingSession }: IGrade) => {
                     <Col span={22}>
                         <ProgressBar
                             percent={
-                                (ourGradingSession?.answersToGrade?.filter(
-                                    a =>
-                                        a.isCorrect !==
-                                        CorrectStatus.NEEDS_GRADED
-                                )?.length +
-                                    1 /
-                                        ourGradingSession?.answersToGrade
-                                            ?.length) *
-                                100
+                                ourGradingSession?.answersToGrade?.length
+                                    ? (ourGradingSession.answersToGrade.filter(
+                                          a =>
+                                              a.isCorrect !==
+                                              CorrectStatus.NEEDS_GRADED
+                                      ).length /
+                                          ourGradingSession.answersToGrade
+                                              .length) *
+                                      100
+                                    : 0
                             }
                         />
                     </Col>
@@ -113,15 +114,20 @@ const Grade = ({ gradingSession }: IGrade) => {
 export default Grade
 
 export const getServerSideProps: GetServerSideProps = async context => {
-    let gradingSession: FullGradingSession | null = null
     const id = context.query.id
-    const session = await getServerSession(context.req, context.res, authOptions)
-    if (session?.user?.role !== Roles.ADMIN) return { notFound: true }
-    try {
-        gradingSession = await getGradingSession(id as string)
-    } catch (err) {
-        console.log('Error getting gradingSession to grade', err)
-    }
+    const session = await getServerSession(
+        context.req,
+        context.res,
+        authOptions
+    )
+    if (
+        session?.user?.role !== Roles.ADMIN ||
+        !session.user.userId ||
+        typeof id !== 'string'
+    )
+        return { notFound: true }
+    const gradingSession = await getGradingSession(id, session.user.userId)
+    if (!gradingSession) return { notFound: true }
     return {
         props: {
             gradingSession: serialize(gradingSession),
