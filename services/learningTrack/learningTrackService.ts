@@ -1,23 +1,25 @@
-import { Prisma } from '@prisma/client'
+import type { TrackInput } from '@/server/contentAuthoring'
+import type { ITrackForm } from '@/components/learningTracks/TrackForm'
+import type { LearningTrackWithOrderedCourses } from '@/pages/api/learningTracks'
+import { orderedSelection } from '@/utils/orderedSelection'
 import { http } from '../http'
-
-class LearningTrackService {
-    private LEARNING_TRACK_ENDPOINT = '/learningTracks'
-    private singularLearningTrack = (
-        track: Prisma.LearningTrackWhereInput | Prisma.LearningTrackUpdateInput
-    ) => `${this.LEARNING_TRACK_ENDPOINT}/${track.id}`
-
-    createTrack = async (track: Prisma.LearningTrackCreateInput) =>
-        await http.post<Prisma.LearningTrackCreateInput>(
-            this.LEARNING_TRACK_ENDPOINT,
-            track
-        )
-    updateTrack = async (track: Prisma.LearningTrackUpdateInput) =>
-        await http.put(this.singularLearningTrack(track), track)
-    deleteTrack = async (track: Prisma.LearningTrackWhereInput) =>
-        await http.delete<Prisma.LearningTrackWhereInput>(
-            this.singularLearningTrack(track)
-        )
+export const trackFormInput = (values: ITrackForm): TrackInput => ({
+    title: values.title,
+    description: values.description,
+    courseIds: orderedSelection(values.courses, values.courseOrder),
+})
+export const learningTrackService = {
+    createTrack: (data: TrackInput) =>
+        http.request<LearningTrackWithOrderedCourses>({
+            method: 'POST',
+            url: '/learningTracks',
+            data,
+        }),
+    updateTrack: (id: string, data: Partial<TrackInput>) =>
+        http.request<LearningTrackWithOrderedCourses>({
+            method: 'PUT',
+            url: `/learningTracks/${id}`,
+            data,
+        }),
+    deleteTrack: (id: string) => http.delete(`/learningTracks/${id}`),
 }
-
-export const learningTrackService = new LearningTrackService()

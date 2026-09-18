@@ -1,3 +1,6 @@
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/server/authOptions'
+import { Roles } from '@prisma/client'
 import { GetServerSideProps } from 'next'
 import { LearningTrackWithOrderedCourses } from '@/pages/api/learningTracks'
 import { findOneTrack } from '@/pages/api/learningTracks/[id]'
@@ -60,7 +63,7 @@ const EditTrack = ({ track }: IEditTrack) => {
     return (
         <div>
             <HeadLayout title={'Edit Learning Track'} />
-            <AppLayout>
+            <AppLayout adminOnly>
                 <PageHeader
                     title={
                         <Space style={{ width: '100%' }} direction={'vertical'}>
@@ -82,7 +85,10 @@ const EditTrack = ({ track }: IEditTrack) => {
                     breadcrumb={
                         <LearningTrackBreadcrumb>
                             <Item>Edit</Item>
-                            <Link legacyBehavior href={`/learningTracks/edit/${ourTrack.id}`}>
+                            <Link
+                                legacyBehavior
+                                href={`/learningTracks/edit/${ourTrack.id}`}
+                            >
                                 <a>
                                     <Item>{ourTrack.title}</Item>
                                 </a>
@@ -101,21 +107,17 @@ const EditTrack = ({ track }: IEditTrack) => {
 }
 export default EditTrack
 
-export const getServerSideProps: GetServerSideProps = async context => {
-    const { query } = context
-    let track: LearningTrackWithOrderedCourses | null = null
-
-    try {
-        track = await findOneTrack(query.id as string)
-    } catch (err) {
-        console.log(
-            'There was an error in trying to get this learning track',
-            err
-        )
-    }
-    return {
-        props: {
-            track: serialize(track),
-        },
-    }
+export const getServerSideProps = async (
+    context: import('next').GetServerSidePropsContext
+) => {
+    const session = await getServerSession(
+        context.req,
+        context.res,
+        authOptions
+    )
+    if (session?.user?.role !== Roles.ADMIN) return { notFound: true }
+    if (typeof context.query.id !== 'string') return { notFound: true }
+    const track = await findOneTrack(context.query.id)
+    if (!track) return { notFound: true }
+    return { props: { track: serialize(track), session } }
 }

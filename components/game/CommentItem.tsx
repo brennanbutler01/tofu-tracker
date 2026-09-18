@@ -6,8 +6,6 @@ import {
     useFeedbackSWR,
 } from '@/services/feedback/useFeedbackSWR'
 import { useFeedbackCRUD } from '@/services/feedback/useFeedbackCRUD'
-import { useRouter } from 'next/router'
-import { useGamesSWR } from '@/services/games/useGamesSWR'
 import ChildCommentEditor from '@/components/game/ChildCommentEditor'
 import FadeIn from 'react-fade-in'
 import AvatarWithFallback from '@/components/game/AvatarWithFallback'
@@ -18,20 +16,23 @@ import TimestampTag from '../TimestampTag'
 interface ICommentItem {
     comment: FullQuestionComment | FullResourceComment
     type: CommentTypes
+    questionId: string
 }
 
-const CommentItem = ({ comment, type }: ICommentItem) => {
+const CommentItem = ({ comment, type, questionId }: ICommentItem) => {
     const [replying, setReplying] = useState(false)
-    const {
-        query: { id },
-    } = useRouter()
-    const game = useGamesSWR(id as string)
     const { likeDislikeQuestionComment, likeDislikeResourceComment } =
-        useFeedbackCRUD(game?.questions?.[game?.currentQuestion - 1]?.id)
-
-    const feedback = useFeedbackSWR(
-        game?.questions?.[game?.currentQuestion - 1]?.id
-    )
+        useFeedbackCRUD(questionId)
+    const feedback = useFeedbackSWR(questionId)
+    const children =
+        (type === CommentTypes.QUESTION
+            ? feedback?.comments
+            : feedback?.resources.find(
+                  resource =>
+                      'resourceId' in comment &&
+                      resource.id === comment.resourceId
+              )?.comments
+        )?.filter(child => comment.childrenComments.includes(child.id)) ?? []
 
     const { actions: likeActions } = useLikes({
         source: comment,
@@ -61,13 +62,14 @@ const CommentItem = ({ comment, type }: ICommentItem) => {
         <Comment
             actions={actions}
             content={comment.comment}
-            author={comment.user?.name || 'Brennan'}
+            author={comment.user?.name || 'Learner'}
             avatar={<AvatarWithFallback user={comment?.user} />}
             datetime={<TimestampTag date={comment.created} />}
         >
             {replying && (
                 <FadeIn>
                     <ChildCommentEditor
+                        questionId={questionId}
                         type={type}
                         setReplying={setReplying}
                         parentId={comment.id}
@@ -78,30 +80,14 @@ const CommentItem = ({ comment, type }: ICommentItem) => {
                     />
                 </FadeIn>
             )}
-            {/* recursively stepping through our children comments */}
-            {comment.childrenComments?.length > 0 && (
+            {children.length > 0 && (
                 <List
-                    dataSource={comment.childrenComments}
-                    renderItem={item => (
+                    dataSource={children}
+                    renderItem={child => (
                         <CommentItem
-                            comment={
-                                type === CommentTypes.QUESTION
-                                    ? (feedback.comments.find(
-                                          c => c.id === item
-                                      ) as FullQuestionComment)
-                                    : (feedback?.resources
-                                          ?.find(
-                                              r =>
-                                                  r.id ===
-                                                  (
-                                                      comment as FullResourceComment
-                                                  ).resourceId
-                                          )
-                                          ?.comments?.find(
-                                              c => c.id === item
-                                          ) as FullResourceComment)
-                            }
+                            comment={child}
                             type={type}
+                            questionId={questionId}
                         />
                     )}
                 />

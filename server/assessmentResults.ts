@@ -42,7 +42,11 @@ export async function refreshAssessmentResults(
             where: { id: activity.id },
             data: {
                 isComplete: game.isComplete,
-                passed: canPass && score >= activity.activity.percentToPass,
+                passed:
+                    canPass &&
+                    score >=
+                        (game.passingThreshold ??
+                            activity.activity.percentToPass),
             },
         })
     if (course)
@@ -50,7 +54,10 @@ export async function refreshAssessmentResults(
             where: { id: course.id },
             data: {
                 isComplete: game.isComplete,
-                passed: canPass && score >= course.course.percentToPass,
+                passed:
+                    canPass &&
+                    score >=
+                        (game.passingThreshold ?? course.course.percentToPass),
             },
         })
 }

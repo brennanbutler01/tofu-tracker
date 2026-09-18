@@ -3,8 +3,6 @@ import { Button, Form, Input, List, Skeleton, Space, Tooltip } from 'antd'
 import AvatarWithFallback from '@/components/game/AvatarWithFallback'
 import { HoverSpan, useLikes } from '@/utils/useLikes'
 import { useFeedbackCRUD } from '@/services/feedback/useFeedbackCRUD'
-import { useRouter } from 'next/router'
-import { useGamesSWR } from '@/services/games/useGamesSWR'
 import { CommentOutlined, EditOutlined } from '@ant-design/icons'
 import styled from 'styled-components'
 import { useSession } from 'next-auth/react'
@@ -36,14 +34,12 @@ const ItemWrapper = styled.div`
         }
     `
 
-const ResourceItem = ({ item }: IResourceItem) => {
-    const {
-        query: { id },
-    } = useRouter()
-    const game = useGamesSWR(id as string)
-    const { likeDislikeResource, editQuestionResource } = useFeedbackCRUD(
-        game?.questions[game?.currentQuestion - 1]?.id
-    )
+const ResourceItem = ({
+    item,
+    questionId,
+}: IResourceItem & { questionId: string }) => {
+    const { likeDislikeResource, editQuestionResource } =
+        useFeedbackCRUD(questionId)
     const { data: session } = useSession()
 
     const { actions: likeActions } = useLikes({
@@ -72,8 +68,14 @@ const ResourceItem = ({ item }: IResourceItem) => {
 
     const saveEdit = async (val: IResourceForm) => {
         setLoading(true)
-        await editQuestionResource({ ...val, resourceId: item.id })
-        setEditing(false)
+        if (
+            await editQuestionResource({
+                ...val,
+                resourceId: item.id,
+                tags: item.tags,
+            })
+        )
+            setEditing(false)
         setLoading(false)
     }
 
@@ -207,7 +209,9 @@ const ResourceItem = ({ item }: IResourceItem) => {
                     </Skeleton>
                 </Form>
             </StyledListItem>
-            {commentsVisible && <ResourceComments item={item} />}
+            {commentsVisible && (
+                <ResourceComments item={item} questionId={questionId} />
+            )}
         </ItemWrapper>
     )
 }

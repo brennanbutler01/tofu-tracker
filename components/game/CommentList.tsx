@@ -44,7 +44,8 @@ const CommentList = ({
             dataSource={comments?.filter(c => !c.parentComment)}
             renderItem={item => (
                 <CommentItem
-                    comment={item as FullQuestionComment}
+                    questionId={feedbackQuestionId}
+                    comment={item}
                     type={type}
                 />
             )}

@@ -20,7 +20,7 @@ Grading recalculates practice counters and course/activity results in the same t
 
 Question and course reports join answers to their actual questions and sessions to their actual courses. Administrator-only report routes validate and bound selections, and the rendered metrics page also checks the role. Pending written responses and unfinished assessments are distinct from failures. Reports show exact counts alongside responsive charts and display request failures.
 
-General user-feedback submissions accept only their form fields, derive authorship from the session, and return only the caller's feedback. Failed saves preserve the form. The graded-answer feed remains restricted to its learner and now has bounded reads and consistent method/error handling. This does not yet repair the separate question-comment/resource feedback routes.
+General user-feedback submissions accept only their form fields, derive authorship from the session, and return only the caller's feedback. Failed saves preserve the form. The graded-answer feed remains restricted to its learner and now has bounded reads and consistent method/error handling. Question-specific feedback is covered below.
 
 ## Deck and question authoring repair
 
@@ -29,6 +29,14 @@ Deck creation/editing and question commands require administrator access. Reques
 Every question edit creates a new active version and archives the original. Existing games keep their question content, answer options and grading meaning. A concurrent edit using the replaced identifier fails instead of overwriting another edit. Connected activity ordering follows the new version for future sessions. Deck and question removal archives content, preserving both completed and in-progress attempts; active counts exclude archived versions.
 
 The editing forms retain values on failure, option/answer dialogs close only after accepted saves, and deck authoring pages check the administrator role before rendering. The practice page redirects unauthenticated visitors before loading user history.
+
+## Curriculum and question feedback repair
+
+Course, activity and learning-track edits accept validated fields and require administrator access, including their rendered pages. Prerequisite cycles are rejected. Activities copy selected questions rather than moving them from another activity. Archives preserve attempt records; each new attempt snapshots its passing percentage. Ordered track membership is replaced atomically. Failed editor saves retain entered values.
+
+Question feedback accepts bounded comment/reply, rating, resource and reaction commands. The server derives authorship, verifies thread/resource membership, restricts resource edits to their author, and permits only HTTPS resource links without embedded credentials. Learners must have the question in one of their sessions. Feedback exposes public user identity fields only. Serialized writes avoid duplicate ratings and lost reaction updates.
+
+Feedback controls work across practice, activity and course sessions, using the actual question identifier rather than assuming every route contains a practice-game identifier. Forms retain failed submissions. Verification includes 79 curriculum checks with desktop/mobile editing, 46 question-feedback checks, and six desktop/mobile feedback workflows covering all three session types.
 
 ## Verification
 
@@ -41,14 +49,16 @@ corepack yarn verify:learning-browser
 corepack yarn verify:grading
 corepack yarn verify:metrics-feedback
 corepack yarn verify:authoring
+corepack yarn verify:curriculum
+corepack yarn verify:question-feedback
+corepack yarn verify:feedback-browser
 ```
 
-The 51 learning-session HTTP/database checks cover owner isolation, server-rendered pages, forged score rejection, duplicate/concurrent answers, persisted question order, deletion rules and course/activity completion. Browser checks exercise practice, activity and course answering on desktop and mobile, including failed-save recovery, persistence and pending written responses. The grading suite adds 82 HTTP/database checks and two browser workflows covering reviewer ownership, concurrent claiming, rejected nested writes, score recalculation, edited feedback, safe resource links, and desktop/mobile review completion with failed-save recovery. The metrics/feedback suite adds 35 HTTP/database assertions and desktop/mobile report and feedback workflows, including failure recovery. The authoring suite adds 51 HTTP/database checks for editing roles, field validation, concurrent edits, immutable content, option rules and archiving, plus persisted desktop/mobile creation/editing workflows. Existing 24 unit tests and 13 profile/permission checks remain in place. Continuous integration runs these against a production build and disposable PostgreSQL.
+The 51 learning-session HTTP/database checks cover owner isolation, server-rendered pages, forged score rejection, duplicate/concurrent answers, persisted question order, deletion rules and course/activity completion. Browser checks exercise practice, activity and course answering on desktop and mobile, including failed-save recovery, persistence and pending written responses. The grading suite adds 84 HTTP/database checks and two browser workflows covering reviewer ownership, concurrent claiming, rejected nested writes, score recalculation, edited feedback, safe resource links, and desktop/mobile review completion with failed-save recovery. The metrics/feedback suite adds 35 HTTP/database assertions and desktop/mobile report and feedback workflows, including failure recovery. The authoring suite adds 51 HTTP/database checks for editing roles, field validation, concurrent edits, immutable content, option rules and archiving, plus persisted desktop/mobile creation/editing workflows. Existing 24 unit tests and 13 profile/permission checks remain in place. Continuous integration runs these against a production build and disposable PostgreSQL.
 
 ## Remaining
 
-- Secure activity/course/learning-track authoring, ordering and their rendered pages. Existing raw nested writes outside the repaired routes must not reach hosting.
-- Repair question feedback/comment/resource writes and add visitor scoping to reporting and reviewer reads.
+- Add visitor scoping to curriculum, feedback, reporting and reviewer reads.
 - Add isolated visitor workspaces and synthetic content, including explicit ownership for shared course/activity/track models. Build complete expiry/reset cleanup and request budgets.
 - Verify author/reviewer and learner workflows on desktop/mobile, including failures and cross-visitor access.
 - Scan publication source/history and assets, deploy the real application on the personal Vercel project with dedicated free persistence, and repeat hosted verification.

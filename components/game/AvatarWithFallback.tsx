@@ -3,7 +3,7 @@ import { Avatar } from 'antd'
 import styled from 'styled-components'
 
 interface ICommentAvatar {
-    user: User
+    user: Pick<User, 'name' | 'image'>
 }
 
 const AvatarContainer = styled.div`

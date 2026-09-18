@@ -28,7 +28,7 @@ const ActivityForm = () => {
     const [form] = Form.useForm<IActivityForm>()
     const { createActivity, updateActivity } = useActivityCRUD()
     const [loading, setLoading] = useState(false)
-    const [passing, setPassing] = useState(0)
+    const [passing, setPassing] = useState(90)
     const swrQuestions = useQuestionSWR()
     const ourActivity = useSingleActivitySWR({})
 
@@ -51,7 +51,7 @@ const ActivityForm = () => {
 
     return (
         <StyledCard
-            loading={query.id ? !ourActivity || loading : loading}
+            loading={Boolean(query.id && !ourActivity)}
             title={
                 <Title level={1}>{query.id ? 'Edit' : 'Create'} Activity</Title>
             }
@@ -59,33 +59,19 @@ const ActivityForm = () => {
             <Form<IActivityForm>
                 layout='vertical'
                 form={form}
-                initialValues={{ questions: undefined }}
-                onValuesChange={val => console.log('val', val)}
+                initialValues={{
+                    questions: [],
+                    questionOrder: [],
+                    displayOnMain: false,
+                    percentToPass: 90,
+                }}
+                disabled={loading}
                 onFinish={async val => {
                     setLoading(true)
-                    if (ourActivity) {
-                        await updateActivity({
-                            id: ourActivity?.id,
-                            description: val.description,
-                            title: val.title,
-                            questions: val.questions.map(id => ({ id })),
-                            questionOrder: val.questionOrder,
-                            displayOnMain: val.displayOnMain,
-                            percentToPass: val.percentToPass,
-                        })
-                    } else {
-                        await createActivity({
-                            ...val,
-                            questions: questions.map(q => ({ id: q })),
-                            fullQuestions: questions.map(
-                                q =>
-                                    swrQuestions?.find(
-                                        sQ => sQ.id === q
-                                    ) as Question
-                            ),
-                        })
-                        form.resetFields()
-                    }
+                    const saved = ourActivity
+                        ? await updateActivity({ ...val, id: ourActivity.id })
+                        : await createActivity(val)
+                    if (saved && !ourActivity) form.resetFields()
                     setLoading(false)
                 }}
             >
@@ -178,7 +164,12 @@ const ActivityForm = () => {
                 </Item>
                 <Space size='large'>
                     <Item>
-                        <Button type='primary' htmlType='submit'>
+                        <Button
+                            loading={loading}
+                            type='primary'
+                            aria-label='Save activity'
+                            htmlType='submit'
+                        >
                             {query.id ? 'Edit' : 'Create'}
                         </Button>
                     </Item>

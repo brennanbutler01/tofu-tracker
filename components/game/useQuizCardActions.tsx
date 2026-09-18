@@ -8,8 +8,6 @@ import { QuestionStatus } from '@/components/game/QuizCard'
 import { useGameCRUD } from '@/services/games/useGameCRUD'
 import { IQuizProps } from '@/components/game/QuizForm'
 import React from 'react'
-import { useFeedbackSWR } from '@/services/feedback/useFeedbackSWR'
-import { useFeedbackCRUD } from '@/services/feedback/useFeedbackCRUD'
 import { useCourseSessionCRUD } from '@/services/courseSession/useCourseSessionCRUD'
 import { AnswerStatus } from '@/components/game/AnswerStatusAlert'
 import { useGameTypeData } from '@/services/useGameTypeData'
@@ -54,8 +52,6 @@ const useQuizCardActions = ({
     const isLastQuestion =
         session?.currentQuestion === session?.questions?.length
     const current = session?.questions?.[session?.currentQuestion - 1]
-    const feedback = useFeedbackSWR(current?.id)
-    const { createQuestionFeedback } = useFeedbackCRUD(current?.id)
 
     return questionStatus === QuestionStatus.WAITING
         ? [
@@ -77,24 +73,17 @@ const useQuizCardActions = ({
               </Button>,
           ]
         : [
-              //TODO - take a look at where feedback might be appropriate to include - it doesn't seem like the way that we were doing it was right and was pretty clunky.
-              //TODO = consider makinmg
-
-              // <Button
-              //   type={"dashed"}
-              //   key={"feedback"}
-              //   icon={<CommentOutlined />}
-              //   onClick={async () => {
-              //     //if we haven't made a feedback for this question yet, we will
-              //     if (!feedback) {
-              //       await createQuestionFeedback();
-              //     }
-              //     setFeedbackQuestionId(current?.id);
-              //     setViewFeedback(!viewFeedback);
-              //   }}
-              // >
-              //   {viewFeedback ? "Hide" : "Show"} Feedback
-              // </Button>,
+              <Button
+                  key='feedback'
+                  aria-label={viewFeedback ? 'Hide feedback' : 'Show feedback'}
+                  icon={<CommentOutlined />}
+                  onClick={() => {
+                      setFeedbackQuestionId(current?.id)
+                      setViewFeedback(!viewFeedback)
+                  }}
+              >
+                  {viewFeedback ? 'Hide' : 'Show'} Feedback
+              </Button>,
               <Button
                   icon={
                       isLastQuestion ? (

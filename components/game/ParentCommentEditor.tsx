@@ -56,7 +56,7 @@ const ParentCommentEditor = ({
             <Row gutter={[0, 8]}>
                 {inputVisible && (
                     <Col span={24}>
-                        <Skeleton active loading={loading}>
+                        <>
                             <Item>
                                 <FadeIn>
                                     <Item noStyle name={'comment'}>
@@ -68,7 +68,7 @@ const ParentCommentEditor = ({
                                     </Item>
                                 </FadeIn>
                             </Item>
-                        </Skeleton>
+                        </>
                     </Col>
                 )}
                 <Col span={24}>
@@ -89,25 +89,30 @@ const ParentCommentEditor = ({
                             <Button
                                 block={breakpoint.xs}
                                 loading={loading}
+                                aria-label={
+                                    inputVisible
+                                        ? 'Add comment'
+                                        : 'Create Comment'
+                                }
                                 onClick={async () => {
                                     if (!inputVisible) {
                                         setInputVisible(true)
                                     } else {
-                                        setInputVisible(false)
-                                        console.log(CommentTypes[type])
                                         setLoading(true)
                                         const val = form.getFieldsValue()
-                                        if (type === CommentTypes.QUESTION) {
-                                            await createComment(val)
-                                        } else {
-                                            if (item) {
-                                                await createResourceComment({
-                                                    ...val,
-                                                    resourceId: item.id,
-                                                })
-                                            }
+                                        const saved =
+                                            type === CommentTypes.QUESTION
+                                                ? await createComment(val)
+                                                : item
+                                                ? await createResourceComment({
+                                                      ...val,
+                                                      resourceId: item.id,
+                                                  })
+                                                : false
+                                        if (saved) {
+                                            form.resetFields()
+                                            setInputVisible(false)
                                         }
-                                        form.resetFields()
                                         setLoading(false)
                                     }
                                 }}

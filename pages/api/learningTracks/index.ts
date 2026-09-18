@@ -1,79 +1,25 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { getSession } from 'next-auth/react'
-import { Methods } from '@/services/http'
-import prisma from '@/prisma/prisma'
-import { Prisma } from '@prisma/client'
-
-export const learningTrackWithOrderedCourses =
-    Prisma.validator<Prisma.LearningTrackDefaultArgs>()({
-        include: {
-            courseOrder: {
-                include: {
-                    course: true,
-                },
-                orderBy: {
-                    index: 'asc',
-                },
-            },
-        },
-    })
-
+import { apiHandler } from '@/server/apiHandler'
+import { requireReviewer } from '@/server/gradingSessions'
+import {
+    getLearningTracks,
+    createTrack,
+    createTrackSchema,
+    learningTrackWithOrderedCourses,
+} from '@/server/contentAuthoring'
+import type { Prisma } from '@prisma/client'
 export type LearningTrackWithOrderedCourses = Prisma.LearningTrackGetPayload<
     typeof learningTrackWithOrderedCourses
 >
-
-export const getLearningTracks = async (): Promise<
-    Array<LearningTrackWithOrderedCourses>
-> =>
-    await prisma.learningTrack.findMany({
-        ...learningTrackWithOrderedCourses,
-    })
-
-const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-    const session = await getSession({ req })
-    const { method } = req
-    if (session?.user?.userId) {
-        switch (method) {
-            case Methods.GET:
-                try {
-                    const learningTracks = await getLearningTracks()
-                    res.status(200).json(learningTracks)
-                } catch (err) {
-                    console.log(
-                        'There was an error trying to fetch our course series...',
-                        err
-                    )
-                    res.status(403).json({
-                        err: `Error trying to fetch our course series - ${err}`,
-                    })
-                }
-                break
-            case Methods.POST:
-                try {
-                    const learningTracks = await prisma.learningTrack.create({
-                        data: req.body,
-                    })
-                    res.status(200).json(learningTracks)
-                } catch (err) {
-                    console.log(
-                        'There was an error trying to create course series',
-                        err
-                    )
-                    res.status(403).json({
-                        err: `Error trying to create new Course Series ${err}`,
-                    })
-                }
-                break
-            default:
-                res.status(403).json({
-                    err: `This api endpoint does not support ${method} requests`,
-                })
-        }
-    } else {
-        res.status(401).json({
-            err: 'You must be authorized to view this endpoint.',
-        })
+export {
+    getLearningTracks,
+    learningTrackWithOrderedCourses,
+} from '@/server/contentAuthoring'
+export default apiHandler(['GET', 'POST'], async (req, res, viewer) => {
+    if (req.method === 'GET') res.status(200).json(await getLearningTracks())
+    else {
+        requireReviewer(viewer)
+        res.status(201).json(
+            await createTrack(viewer.userId, createTrackSchema.parse(req.body))
+        )
     }
-}
-
-export default handler
+})

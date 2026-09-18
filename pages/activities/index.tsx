@@ -1,3 +1,6 @@
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/server/authOptions'
+import { Roles } from '@prisma/client'
 import ActivityTabs from '@/components/activities/ActivityTabs'
 import AppLayout from '@/components/AppLayout'
 import HeadLayout from '@/components/HeadLayout'
@@ -25,7 +28,7 @@ const Activities = ({ activities }: IActivities) => {
     return (
         <div>
             <HeadLayout title='Activities' />
-            <AppLayout>
+            <AppLayout adminOnly>
                 <Row>
                     <Col span={24}>
                         <PageHeader
@@ -43,19 +46,14 @@ const Activities = ({ activities }: IActivities) => {
 export default Activities
 
 export const getServerSideProps = async (
-    context: GetServerSidePropsContext
+    context: import('next').GetServerSidePropsContext
 ) => {
-    let activities: Array<Activity> = []
-
-    try {
-        activities = await getActivities()
-    } catch (err) {
-        console.log(`There was an error trying to get activitiies - ${err}`)
-    }
-
-    return {
-        props: {
-            activities: serialize(activities),
-        },
-    }
+    const session = await getServerSession(
+        context.req,
+        context.res,
+        authOptions
+    )
+    if (session?.user?.role !== Roles.ADMIN) return { notFound: true }
+    const activities = await getActivities()
+    return { props: { activities: serialize(activities), session } }
 }

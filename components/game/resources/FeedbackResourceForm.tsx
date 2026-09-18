@@ -45,8 +45,7 @@ const FeedbackResourceForm = ({ visible, type }: IFormProps) => {
                 form={form}
                 layout={'vertical'}
                 onFinish={async val => {
-                    await createQuestionResource(val)
-                    form.resetFields()
+                    if (await createQuestionResource(val)) form.resetFields()
                 }}
             >
                 <Row gutter={16}>

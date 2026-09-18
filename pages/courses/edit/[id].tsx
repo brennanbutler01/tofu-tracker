@@ -1,3 +1,6 @@
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/server/authOptions'
+import { Roles } from '@prisma/client'
 import {
     Breadcrumb,
     Col,
@@ -66,7 +69,7 @@ const EditCourse = ({ course }: IEditCourse) => {
     return (
         <div>
             <HeadLayout />
-            <AppLayout>
+            <AppLayout adminOnly>
                 <PageHeader
                     onBack={back}
                     title={
@@ -111,18 +114,17 @@ const EditCourse = ({ course }: IEditCourse) => {
 }
 export default EditCourse
 
-export const getServerSideProps: GetServerSideProps = async context => {
-    const { id } = context.query
-    let course: Course | null = null
-    try {
-        course = await getCourse(id as string)
-    } catch (err) {
-        console.log('There was an error getting the course - ', err)
-    }
-
-    return {
-        props: {
-            course: serialize(course),
-        },
-    }
+export const getServerSideProps = async (
+    context: import('next').GetServerSidePropsContext
+) => {
+    const session = await getServerSession(
+        context.req,
+        context.res,
+        authOptions
+    )
+    if (session?.user?.role !== Roles.ADMIN) return { notFound: true }
+    if (typeof context.query.id !== 'string') return { notFound: true }
+    const course = await getCourse(context.query.id)
+    if (!course) return { notFound: true }
+    return { props: { course: serialize(course), session } }
 }

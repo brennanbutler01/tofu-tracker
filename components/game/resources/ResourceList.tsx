@@ -11,20 +11,7 @@ import ResourceItem from '@/components/game/resources/ResourceItem'
 import { useGameTypeData } from '@/services/useGameTypeData'
 import { QuizProps } from '../Quiz'
 
-const resourceWithUser = Prisma.validator<Prisma.QuestionResourcesDefaultArgs>()({
-    include: {
-        user: true,
-        comments: {
-            include: {
-                user: true,
-            },
-        },
-    },
-})
-
-export type ResourceWithComments = Prisma.QuestionResourcesGetPayload<
-    typeof resourceWithUser
->
+export type { ResourceWithComments } from '@/server/feedbackShapes'
 
 const ListDiv = styled.div`
     .ant-list-footer {
@@ -57,7 +44,15 @@ const ResourceList = ({ type }: QuizProps) => {
                     ),
                 }}
                 itemLayout={'vertical'}
-                renderItem={item => <ResourceItem item={item} />}
+                renderItem={item => (
+                    <ResourceItem
+                        item={item}
+                        questionId={
+                            session?.questions?.[session?.currentQuestion - 1]
+                                ?.id
+                        }
+                    />
+                )}
                 footer={
                     feedback?.resources?.length === 0 ? null : (
                         <Button

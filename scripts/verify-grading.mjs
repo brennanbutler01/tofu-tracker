@@ -289,8 +289,13 @@ try {
             user: learner,
         })
         assert.equal(result.gameSession.numberCorrect, 1)
-        assert.equal(result.passed, false)
-        checks += 2
+        assert.equal(result.gameSession.passingThreshold, 50)
+        assert.equal(
+            result.passed,
+            true,
+            'Editing the course must not change an existing attempt’s threshold'
+        )
+        checks += 3
         const done = await request(endpoint, {
             user: owner,
             method: 'PUT',
@@ -390,7 +395,9 @@ try {
                 'Reference guide'
             )
             await page.unroute(endpoint)
-            await page.getByRole('button', { name: 'Create resource', exact: true }).click()
+            await page
+                .getByRole('button', { name: 'Create resource', exact: true })
+                .click()
             await expect(page.getByPlaceholder('Resource Title')).toHaveValue(
                 ''
             )

@@ -20,7 +20,10 @@
         "verify:learning-browser": "node scripts/verify-learning-browser.mjs",
         "verify:grading": "node scripts/verify-grading.mjs",
         "verify:metrics-feedback": "node scripts/verify-metrics-feedback.mjs",
-        "verify:authoring": "node scripts/verify-authoring.mjs"
+        "verify:authoring": "node scripts/verify-authoring.mjs",
+        "verify:curriculum": "node scripts/verify-curriculum.mjs",
+        "verify:question-feedback": "node scripts/verify-question-feedback.mjs",
+        "verify:feedback-browser": "node scripts/verify-feedback-browser.mjs"
     },
     "dependencies": {
         "@ant-design/icons": "4.8.3",

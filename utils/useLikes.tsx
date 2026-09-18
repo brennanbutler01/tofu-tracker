@@ -5,7 +5,6 @@ import {
     LikeFilled,
     LikeOutlined,
 } from '@ant-design/icons'
-import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { LikeActions } from '@/services/feedback/useFeedbackCRUD'
 import styled from 'styled-components'
@@ -34,9 +33,14 @@ export const HoverSpan = styled.span`
 `
 
 export const useLikes = ({ source, likeFunction }: ILikes) => {
-    const [action, setAction] = useState<LikeDislike>(null)
-
     const { data: session } = useSession()
+    const userId = session?.user?.userId
+    const action: LikeDislike =
+        userId && source?.likes?.includes(userId)
+            ? 'liked'
+            : userId && source?.dislikes?.includes(userId)
+            ? 'disliked'
+            : null
 
     const like = async () => {
         if (likeFunction) {
@@ -55,16 +59,6 @@ export const useLikes = ({ source, likeFunction }: ILikes) => {
             })
         }
     }
-
-    useEffect(() => {
-        if (source?.likes?.includes(session?.user?.userId as string)) {
-            setAction('liked')
-        } else if (
-            source?.dislikes?.includes(session?.user?.userId as string)
-        ) {
-            setAction('disliked')
-        }
-    }, [session?.user?.userId, source])
 
     const actions = [
         <Space key={'likesDislikes'}>

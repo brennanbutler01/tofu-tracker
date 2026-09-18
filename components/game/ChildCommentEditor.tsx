@@ -2,8 +2,6 @@ import { Button, Col, Form, Input, Row, Space } from 'antd'
 import React, { useEffect, useRef } from 'react'
 import { ICommentForm } from '@/components/game/ParentCommentEditor'
 import { useFeedbackCRUD } from '@/services/feedback/useFeedbackCRUD'
-import { useRouter } from 'next/router'
-import { useGamesSWR } from '@/services/games/useGamesSWR'
 import { CommentTypes } from '@/components/game/CommentList'
 
 const { Item } = Form,
@@ -12,25 +10,22 @@ const { Item } = Form,
 interface IChildEditorProps {
     setReplying: React.Dispatch<React.SetStateAction<boolean>>
     parentId: string
+    questionId: string
     type: CommentTypes
     resourceId?: string
 }
 
 const ChildCommentEditor = ({
     parentId,
+    questionId,
     setReplying,
     type,
     resourceId,
 }: IChildEditorProps) => {
     const closeEditor = () => setReplying(false)
     const textRef = useRef<HTMLTextAreaElement>(null)
-    const {
-        query: { id },
-    } = useRouter()
-    const game = useGamesSWR(id as string)
-
     const { createQuestionChildComment, createResourceChildComment } =
-        useFeedbackCRUD(game.questions[game.currentQuestion - 1].id)
+        useFeedbackCRUD(questionId)
 
     useEffect(() => {
         //lets us focus the editor as soon as it appears.
@@ -42,16 +37,17 @@ const ChildCommentEditor = ({
     return (
         <Form<ICommentForm>
             onFinish={async val => {
-                closeEditor()
-                type === CommentTypes.QUESTION
-                    ? await createQuestionChildComment({ ...val, parentId })
-                    : resourceId
-                    ? await createResourceChildComment({
-                          ...val,
-                          parentId,
-                          resourceId,
-                      })
-                    : console.log('please pass a resource Id')
+                const saved =
+                    type === CommentTypes.QUESTION
+                        ? await createQuestionChildComment({ ...val, parentId })
+                        : resourceId
+                        ? await createResourceChildComment({
+                              ...val,
+                              parentId,
+                              resourceId,
+                          })
+                        : false
+                if (saved) closeEditor()
             }}
         >
             <Row>

@@ -51,12 +51,13 @@ const TrackForm = ({ setTab, editingTrack }: TrackFormProps) => {
             form.setFieldsValue({
                 title: editingTrack.title,
                 description: editingTrack.description,
-                courseOrder: editingTrack.courseOrder.map(course => course.courseId),
+                courseOrder: editingTrack.courseOrder.map(
+                    course => course.courseId
+                ),
                 courses: editingTrack?.courseOrder?.map(
                     course => course.courseId
                 ),
             })
-            console.log(form.getFieldsValue())
         }
     }, [form, editingTrack])
 
@@ -69,30 +70,26 @@ const TrackForm = ({ setTab, editingTrack }: TrackFormProps) => {
                             {editingTrack ? 'Edit' : 'Create'} Learning Track
                         </Title>
                     }
-                    loading={loading}
                 >
                     <Form
                         form={form}
                         layout={'vertical'}
+                        disabled={loading}
+                        initialValues={{ courses: [], courseOrder: [] }}
                         onFinish={async val => {
-                            if (setTab && !editingTrack) {
-                                setLoading(true)
-                                await createLearningTrack(val)
-                                notification.success({
-                                    message: 'Learning Track Created!',
-                                    description: 'Please click here to view.',
-                                    onClick: () => {
-                                        setTab(TrackTabs.view)
-                                        notification.destroy()
-                                    },
-                                    style: { cursor: 'pointer' },
-                                })
-                                setLoading(false)
+                            setLoading(true)
+                            const saved = editingTrack
+                                ? await editLearningTrack({
+                                      ...val,
+                                      id: editingTrack.id,
+                                  })
+                                : await createLearningTrack(val)
+                            setLoading(false)
+                            if (saved && !editingTrack) {
                                 form.resetFields()
-                            } else if (editingTrack) {
-                                await editLearningTrack({
-                                    id: editingTrack.id,
-                                    ...form.getFieldsValue(),
+                                notification.success({
+                                    message: 'Learning track created',
+                                    onClick: () => setTab?.(TrackTabs.view),
                                 })
                             }
                         }}
@@ -170,6 +167,7 @@ const TrackForm = ({ setTab, editingTrack }: TrackFormProps) => {
                             <Item>
                                 <Button
                                     loading={loading}
+                                    aria-label='Save learning track'
                                     htmlType={'submit'}
                                     type={'primary'}
                                 >

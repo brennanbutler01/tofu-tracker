@@ -1,20 +1,29 @@
-import { Prisma } from '@prisma/client'
+import type { CourseInput } from '@/server/contentAuthoring'
+import type { CourseWithDecks } from '@/pages/api/courses'
+import type { ICourseForm } from '@/components/courses/CourseForm'
+import { CourseLevel } from '@prisma/client'
 import { http } from '../http'
 
-class CourseService {
-    private COURSE_ENDPOINT = '/courses'
-    private singularCourses = (
-        courses: Prisma.CourseWhereInput | Prisma.CourseUpdateInput
-    ) => `${this.COURSE_ENDPOINT}/${courses.id}`
-
-    createCourse = async (course: Prisma.CourseCreateInput) =>
-        await http.post<Prisma.CourseCreateInput>(this.COURSE_ENDPOINT, course)
-    updateCourse = async (course: Prisma.CourseUpdateInput) =>
-        await http.put(this.singularCourses(course), course)
-    // updateDeckWithQuestions = async (deck: Prisma.DeckUpdateInput) =>
-    //     await http.put(`/decks/questions/${deck.id}`, deck);
-    deleteCourse = async (course: Prisma.CourseWhereInput) =>
-        await http.delete<Prisma.CourseWhereInput>(this.singularCourses(course))
+export const courseFormInput = (values: ICourseForm): CourseInput => ({
+    title: values.title,
+    description: values.description,
+    deckIds: values.decks ?? [],
+    preReqs: values.preReqs ?? [],
+    level: values.level ?? CourseLevel.ALL,
+    percentToPass: values.passingPercentage ?? 90,
+})
+export const courseService = {
+    createCourse: (data: CourseInput) =>
+        http.request<CourseWithDecks>({
+            method: 'POST',
+            url: '/courses',
+            data,
+        }),
+    updateCourse: (id: string, data: Partial<CourseInput>) =>
+        http.request<CourseWithDecks>({
+            method: 'PUT',
+            url: `/courses/${id}`,
+            data,
+        }),
+    deleteCourse: (id: string) => http.delete(`/courses/${id}`),
 }
-
-export const courseService = new CourseService()

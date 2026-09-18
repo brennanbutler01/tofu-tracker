@@ -49,7 +49,7 @@ const GameCardTabs = ({
                         }}
                     >
                         <CommentList
-                            comments={feedback?.comments}
+                            comments={feedback?.comments ?? []}
                             type={CommentTypes.QUESTION}
                             feedbackQuestionId={feedbackQuestionId}
                         />

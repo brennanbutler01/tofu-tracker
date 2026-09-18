@@ -1,18 +1,11 @@
-import { Prisma } from '@prisma/client'
 import { http } from '@/services/http'
-
-class FeedbackService {
-    private FEEDBACK_ENDPOINT = (id: string) => '/questions/feedback/' + id
-
-    modifyFeedback = async (
-        questionId: string,
-        feedback: Prisma.QuestionFeedbackUpdateInput
-    ) => await http.put(this.FEEDBACK_ENDPOINT(questionId), feedback)
-
-    createFeedback = async (
-        questionId: string,
-        feedback: Prisma.QuestionFeedbackCreateInput
-    ) => await http.post(this.FEEDBACK_ENDPOINT(questionId), feedback)
+import type { FeedbackAction } from '@/server/questionFeedback'
+import type { FullQuestionFeedback } from '@/server/feedbackShapes'
+export const feedbackService = {
+    modifyFeedback: (questionId: string, data: FeedbackAction) =>
+        http.request<FullQuestionFeedback>({
+            method: 'PUT',
+            url: `/questions/feedback/${questionId}`,
+            data,
+        }),
 }
-
-export const feedbackService = new FeedbackService()

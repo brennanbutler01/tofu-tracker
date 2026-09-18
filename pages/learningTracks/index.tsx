@@ -1,3 +1,6 @@
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/server/authOptions'
+import { Roles } from '@prisma/client'
 import { PageHeader, Typography } from 'antd'
 
 import AppLayout from '@/components/AppLayout'
@@ -57,16 +60,15 @@ const LearningTracks = ({ tracks }: ILearningTracks) => {
 }
 export default LearningTracks
 
-export const getServerSideProps: GetServerSideProps = async context => {
-    let tracks: Array<LearningTrack> = []
-    try {
-        tracks = await getLearningTracks()
-    } catch (err) {
-        console.log('There was an error trying to get the learning tracks', err)
-    }
-    return {
-        props: {
-            tracks: serialize(tracks),
-        },
-    }
+export const getServerSideProps = async (
+    context: import('next').GetServerSidePropsContext
+) => {
+    const session = await getServerSession(
+        context.req,
+        context.res,
+        authOptions
+    )
+    if (session?.user?.role !== Roles.ADMIN) return { notFound: true }
+    const tracks = await getLearningTracks()
+    return { props: { tracks: serialize(tracks), session } }
 }

@@ -1,3 +1,6 @@
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/server/authOptions'
+import { Roles } from '@prisma/client'
 import { CourseWithDecks, getCourses } from '../api/courses'
 import { PageHeader, Typography } from 'antd'
 import { deserialize, serialize } from '@/utils/serialize.utils'
@@ -53,17 +56,15 @@ const Courses = ({ courses }: ICourses) => {
 
 export default Courses
 
-export const getServerSideProps: GetServerSideProps = async context => {
-    let courses: Array<Course> = []
-
-    try {
-        courses = await getCourses()
-    } catch (err) {
-        console.log('There was an error trying to get the courses', err)
-    }
-    return {
-        props: {
-            courses: serialize(courses),
-        },
-    }
+export const getServerSideProps = async (
+    context: import('next').GetServerSidePropsContext
+) => {
+    const session = await getServerSession(
+        context.req,
+        context.res,
+        authOptions
+    )
+    if (session?.user?.role !== Roles.ADMIN) return { notFound: true }
+    const courses = await getCourses()
+    return { props: { courses: serialize(courses), session } }
 }

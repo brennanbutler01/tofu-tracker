@@ -34,8 +34,8 @@ export async function createActivitySession(
     userId: string
 ) {
     return prisma.$transaction(async tx => {
-        const activity = await tx.activity.findUnique({
-            where: { id: activityId },
+        const activity = await tx.activity.findFirst({
+            where: { id: activityId, archived: false },
             include: {
                 questions: {
                     where: { archived: false },
@@ -66,6 +66,7 @@ export async function createActivitySession(
                             userId,
                             type: GameTypes.ACTIVITY,
                             title: activity.title,
+                            passingThreshold: activity.percentToPass,
                             questionOrder: ids,
                             questions: { connect: ids.map(id => ({ id })) },
                         },
@@ -79,8 +80,8 @@ export async function createActivitySession(
 export async function createCourseSession(courseId: string, userId: string) {
     return prisma.$transaction(async tx => {
         await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`
-        const course = await tx.course.findUnique({
-            where: { id: courseId },
+        const course = await tx.course.findFirst({
+            where: { id: courseId, archived: false },
             include: {
                 decks: {
                     where: { archived: false },
@@ -136,6 +137,7 @@ export async function createCourseSession(courseId: string, userId: string) {
                             userId,
                             type: GameTypes.COURSE,
                             title: course.title,
+                            passingThreshold: course.percentToPass,
                             questionOrder: ids,
                             questions: { connect: ids.map(id => ({ id })) },
                         },

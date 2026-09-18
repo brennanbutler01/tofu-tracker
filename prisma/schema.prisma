@@ -56,6 +56,9 @@ model User {
   ResourceComments  ResourceComments[]
   sessions          Session[]
   UserFeedback      UserFeedback[]
+  authoredCourses Course[]
+  authoredActivities Activity[]
+  authoredTracks LearningTrack[]
 }
 
 model Admin {
@@ -192,6 +195,7 @@ model GameSession {
   started         DateTime         @default(now())
   currentQuestion Int              @default(1)
   questionOrder   String[]         @default([])
+  passingThreshold Int?
   numberCorrect   Int              @default(0)
   numberAnswered  Int              @default(0)
   userId          String
@@ -261,6 +265,9 @@ model GradingSession {
 }
 
 model Course {
+  archived Boolean @default(false)
+  ownerId String?
+  owner User? @relation(fields: [ownerId], references: [id])
   id             String          @id @unique @default(cuid())
   created        DateTime        @default(now())
   percentToPass  Int             @default(90)
@@ -276,6 +283,9 @@ model Course {
 }
 
 model Activity {
+  archived Boolean @default(false)
+  ownerId String?
+  owner User? @relation(fields: [ownerId], references: [id])
   id              String            @id @unique @default(cuid())
   title           String
   description     String
@@ -336,6 +346,9 @@ model CourseOrder {
 }
 
 model LearningTrack {
+  archived Boolean @default(false)
+  ownerId String?
+  owner User? @relation(fields: [ownerId], references: [id])
   id          String        @id @default(cuid())
   created     DateTime      @default(now())
   updatedAt   DateTime      @default(now())

@@ -1,28 +1,18 @@
-import { Prisma } from '@prisma/client'
+import type { ActivityInput } from '@/server/contentAuthoring'
+import type { ActivityWithQuestion } from '@/pages/api/activities'
 import { http } from '../http'
-
-class ActivityService {
-    private ACTIVITY_ENDPOINT = '/activities'
-    private singularActivity = (
-        activity: Prisma.ActivityWhereInput | Prisma.ActivityUpdateInput
-    ) => `${this.ACTIVITY_ENDPOINT}/${activity.id}`
-
-    createActivity = async (activity: Prisma.ActivityCreateInput) => {
-        await http.post<Prisma.ActivityCreateInput>(
-            this.ACTIVITY_ENDPOINT,
-            activity
-        )
-    }
-    deleteActivity = async (activity: Prisma.ActivityWhereInput) =>
-        await http.delete<Prisma.ActivityWhereInput>(
-            this.singularActivity(activity)
-        )
-
-    updateActivity = async (activity: Prisma.ActivityUpdateInput) =>
-        await http.put<Prisma.ActivityUpdateInput>(
-            this.singularActivity(activity),
-            activity
-        )
+export const activityService = {
+    createActivity: (data: ActivityInput) =>
+        http.request<ActivityWithQuestion>({
+            method: 'POST',
+            url: '/activities',
+            data,
+        }),
+    updateActivity: (id: string, data: Partial<ActivityInput>) =>
+        http.request<ActivityWithQuestion>({
+            method: 'PUT',
+            url: `/activities/${id}`,
+            data,
+        }),
+    deleteActivity: (id: string) => http.delete(`/activities/${id}`),
 }
-
-export const activityService = new ActivityService()

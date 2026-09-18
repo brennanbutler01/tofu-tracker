@@ -6,7 +6,6 @@ import {
     Input,
     Row,
     Select,
-    Skeleton,
     Space,
     Typography,
     notification,
@@ -58,10 +57,6 @@ const CourseForm = ({ setCourseTab, editingCourse }: CourseFormProps) => {
 
     useEffect(() => {
         if (editingCourse) {
-            console.log(
-                `This is the editing course ${editingCourse}`,
-                editingCourse
-            )
             form.setFieldsValue({
                 ...editingCourse,
                 decks: editingCourse?.decks?.map(deck => deck.id),
@@ -75,14 +70,24 @@ const CourseForm = ({ setCourseTab, editingCourse }: CourseFormProps) => {
         <Row justify={'center'}>
             <Col span={24} sm={20} md={16} lg={12} xxl={8}>
                 <StyledCard title={<Title level={3}>{cardTitle} Course</Title>}>
-                    <Skeleton active loading={loading}>
+                    <>
                         <Form
+                            initialValues={{
+                                passingPercentage: 90,
+                                preReqs: [],
+                                decks: [],
+                                level: CourseLevel.ALL,
+                            }}
+                            disabled={loading}
                             layout={'vertical'}
                             form={form}
                             onFinish={async val => {
                                 setLoading(true)
                                 if (editingCourse) {
-                                    await updateCourse(val)
+                                    if (!(await updateCourse(val))) {
+                                        setLoading(false)
+                                        return
+                                    }
                                     notification.open({
                                         message: 'Course updated',
                                         description:
@@ -93,7 +98,10 @@ const CourseForm = ({ setCourseTab, editingCourse }: CourseFormProps) => {
                                             await push('/courses'),
                                     })
                                 } else {
-                                    await createCourse(val)
+                                    if (!(await createCourse(val))) {
+                                        setLoading(false)
+                                        return
+                                    }
                                     notification.open({
                                         message: 'Course Created',
                                         description:
@@ -106,7 +114,7 @@ const CourseForm = ({ setCourseTab, editingCourse }: CourseFormProps) => {
                                     })
                                 }
                                 setLoading(false)
-                                form.resetFields()
+                                if (!editingCourse) form.resetFields()
                             }}
                         >
                             <Row gutter={[16, 0]}>
@@ -265,7 +273,9 @@ const CourseForm = ({ setCourseTab, editingCourse }: CourseFormProps) => {
                                         </Item>
                                         <Item>
                                             <Button
+                                                loading={loading}
                                                 type={'primary'}
+                                                aria-label='Save course'
                                                 htmlType={'submit'}
                                             >
                                                 {cardTitle}
@@ -275,7 +285,7 @@ const CourseForm = ({ setCourseTab, editingCourse }: CourseFormProps) => {
                                 </Col>
                             </Row>
                         </Form>
-                    </Skeleton>
+                    </>
                 </StyledCard>
             </Col>
         </Row>
