@@ -12,15 +12,19 @@ export default apiHandler(
     async (req, res, viewer) => {
         const id = identifier.parse(req.query.id)
         if (req.method === 'GET') {
-            const record = await getCourse(id)
+            const record = await getCourse(id, viewer.userId)
             if (!record) throw new RequestError(404, 'Content not found')
             res.status(200).json(record)
         } else {
             requireReviewer(viewer)
             res.status(200).json(
                 req.method === 'DELETE'
-                    ? await archiveCourse(id)
-                    : await editCourse(id, editCourseSchema.parse(req.body))
+                    ? await archiveCourse(id, viewer.userId)
+                    : await editCourse(
+                          id,
+                          editCourseSchema.parse(req.body),
+                          viewer.userId
+                      )
             )
         }
     }

@@ -12,7 +12,8 @@ export type DeckWithQuestionCount = Prisma.DeckGetPayload<
 >
 export { getDeckQuestionCount } from '@/server/deckAuthoring'
 export default apiHandler(['GET', 'POST'], async (req, res, viewer) => {
-    if (req.method === 'GET') res.status(200).json(await getDeckQuestionCount())
+    if (req.method === 'GET')
+        res.status(200).json(await getDeckQuestionCount(viewer.userId))
     else {
         requireReviewer(viewer)
         res.status(201).json(

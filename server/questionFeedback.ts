@@ -1,3 +1,4 @@
+import { visitorQuestionScope } from './visitorScope'
 import prisma from '@/prisma/prisma'
 import { Prisma, Roles } from '@prisma/client'
 import { z } from 'zod'
@@ -60,6 +61,7 @@ async function requireQuestion(
     const question = await tx.question.findFirst({
         where: {
             id: questionId,
+            AND: [visitorQuestionScope(viewer.userId)],
             ...(viewer.role === Roles.ADMIN
                 ? {}
                 : { GameSession: { some: { userId: viewer.userId } } }),

@@ -56,16 +56,28 @@ model User {
   ResourceComments  ResourceComments[]
   sessions          Session[]
   UserFeedback      UserFeedback[]
+  demoVisit DemoVisit?
+  ownedAnswers AnswerOption[]
   authoredCourses Course[]
   authoredActivities Activity[]
   authoredTracks LearningTrack[]
+}
+
+model DemoVisit {
+  userId String @id
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  requests Int @default(0)
+  writeBytes Int @default(0)
+
+  @@index([expiresAt])
 }
 
 model Admin {
   id     String @id @default(cuid())
   email  String @unique
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Index {
@@ -90,7 +102,7 @@ model Deck {
   tags      String[]
   archived  Boolean    @default(false)
   courseId  String?
-  user      User       @relation(fields: [userId], references: [id])
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   questions Question[]
   Course    Course[]
 }
@@ -106,7 +118,7 @@ model Question {
   archived           Boolean                   @default(false)
   correctAnswer      String
   activityId         String?
-  Activity           Activity?                 @relation(fields: [activityId], references: [id])
+  Activity           Activity?                 @relation(fields: [activityId], references: [id], onDelete: Cascade)
   deck               Deck?                     @relation(fields: [deckId], references: [id], onDelete: Cascade)
   ActivityQuestion   ActivityQuestion[]
   options            AnswerOption[]
@@ -137,7 +149,7 @@ model QuestionResources {
   created          DateTime           @default(now())
   updatedAt        DateTime           @default(now())
   questionFeedback QuestionFeedback   @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
-  user             User               @relation(fields: [userId], references: [id])
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   comments         ResourceComments[]
 }
 
@@ -152,8 +164,8 @@ model ResourceComments {
   updatedAt        DateTime          @default(now())
   parentComment    String?
   childrenComments String[]
-  resource         QuestionResources @relation(fields: [resourceId], references: [id])
-  user             User              @relation(fields: [userId], references: [id])
+  resource         QuestionResources @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model QuestionRating {
@@ -162,7 +174,7 @@ model QuestionRating {
   rating             Float
   userId             String
   questionFeedback   QuestionFeedback @relation(fields: [questionFeedbackId], references: [id], onDelete: Cascade)
-  user               User             @relation(fields: [userId], references: [id])
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model QuestionComments {
@@ -177,10 +189,12 @@ model QuestionComments {
   likes              String[]
   childrenComments   String[]
   questionFeedback   QuestionFeedback @relation(fields: [questionFeedbackId], references: [id], onDelete: Cascade)
-  user               User             @relation(fields: [userId], references: [id])
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model AnswerOption {
+  ownerId String?
+  owner User? @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   id              String            @id @default(cuid())
   answer          String
   created         DateTime          @default(now())
@@ -204,7 +218,7 @@ model GameSession {
   updatedAt       DateTime         @default(now())
   type            GameTypes
   title           String
-  user            User             @relation(fields: [userId], references: [id])
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   ActivitySession ActivitySession?
   CourseSession   CourseSession?
   answerHistory   GameAnswer[]
@@ -217,8 +231,8 @@ model GradingCritique {
   gradedById   String
   critique     String
   created      DateTime           @default(now())
-  gradedBy     User               @relation(fields: [gradedById], references: [id])
-  userAnswer   AnswerOption       @relation(fields: [userAnswerId], references: [id])
+  gradedBy     User               @relation(fields: [gradedById], references: [id], onDelete: Cascade)
+  userAnswer   AnswerOption       @relation(fields: [userAnswerId], references: [id], onDelete: Cascade)
   resources    CritiqueResource[]
   GameAnswer   GameAnswer?
 }
@@ -232,7 +246,7 @@ model CritiqueResource {
   tags        String[]
   created     DateTime        @default(now())
   updatedAt   DateTime        @default(now())
-  critique    GradingCritique @relation(fields: [critiqueId], references: [id])
+  critique    GradingCritique @relation(fields: [critiqueId], references: [id], onDelete: Cascade)
 }
 
 model GameAnswer {
@@ -246,12 +260,12 @@ model GameAnswer {
   gradingSessionId String?
   playerId         String
   updatedAt        DateTime         @default(now())
-  userAnswer       AnswerOption?    @relation(fields: [answerOptionId], references: [id])
-  critique         GradingCritique? @relation(fields: [critiqueId], references: [id])
+  userAnswer       AnswerOption?    @relation(fields: [answerOptionId], references: [id], onDelete: Cascade)
+  critique         GradingCritique? @relation(fields: [critiqueId], references: [id], onDelete: Cascade)
   GameSession      GameSession?     @relation(fields: [gameSessionId], references: [id], onDelete: Cascade)
-  GradingSession   GradingSession?  @relation(fields: [gradingSessionId], references: [id])
-  player           User             @relation(fields: [playerId], references: [id])
-  question         Question         @relation(fields: [questionId], references: [id])
+  GradingSession   GradingSession?  @relation(fields: [gradingSessionId], references: [id], onDelete: Cascade)
+  player           User             @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  question         Question         @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
 model GradingSession {
@@ -260,14 +274,14 @@ model GradingSession {
   currentAnswer  String
   isComplete     Boolean      @default(false)
   gradedById     String
-  gradedBy       User         @relation(fields: [gradedById], references: [id])
+  gradedBy       User         @relation(fields: [gradedById], references: [id], onDelete: Cascade)
   answersToGrade GameAnswer[]
 }
 
 model Course {
   archived Boolean @default(false)
   ownerId String?
-  owner User? @relation(fields: [ownerId], references: [id])
+  owner User? @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   id             String          @id @unique @default(cuid())
   created        DateTime        @default(now())
   percentToPass  Int             @default(90)
@@ -285,7 +299,7 @@ model Course {
 model Activity {
   archived Boolean @default(false)
   ownerId String?
-  owner User? @relation(fields: [ownerId], references: [id])
+  owner User? @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   id              String            @id @unique @default(cuid())
   title           String
   description     String
@@ -307,16 +321,16 @@ model ActivitySession {
   isComplete    Boolean     @default(false)
   passed        Boolean     @default(false)
   gameSessionId String      @unique
-  activity      Activity    @relation(fields: [activityId], references: [id])
-  gameSession   GameSession @relation(fields: [gameSessionId], references: [id])
-  user          User        @relation(fields: [userId], references: [id])
+  activity      Activity    @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  gameSession   GameSession @relation(fields: [gameSessionId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ActivityQuestion {
   id         String   @id @unique @default(cuid())
   questionId String
   index      Int
-  question   Question @relation(fields: [questionId], references: [id])
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
 model CourseSession {
@@ -329,9 +343,9 @@ model CourseSession {
   attempt       Int         @default(0)
   isComplete    Boolean     @default(false)
   passed        Boolean     @default(false)
-  course        Course      @relation(fields: [courseId], references: [id])
-  gameSession   GameSession @relation(fields: [gameSessionId], references: [id])
-  user          User?       @relation(fields: [userId], references: [id])
+  course        Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  gameSession   GameSession @relation(fields: [gameSessionId], references: [id], onDelete: Cascade)
+  user          User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model CourseOrder {
@@ -341,14 +355,14 @@ model CourseOrder {
   courseId        String
   index           Int
   learningTrackId String?
-  course          Course         @relation(fields: [courseId], references: [id])
+  course          Course         @relation(fields: [courseId], references: [id], onDelete: Cascade)
   learningTrack   LearningTrack? @relation(fields: [learningTrackId], references: [id], onDelete: Cascade)
 }
 
 model LearningTrack {
   archived Boolean @default(false)
   ownerId String?
-  owner User? @relation(fields: [ownerId], references: [id])
+  owner User? @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   id          String        @id @default(cuid())
   created     DateTime      @default(now())
   updatedAt   DateTime      @default(now())
@@ -366,7 +380,7 @@ model UserFeedback {
   suggestion String
   type       FeedbackType
   severity   FeedbackSeverity
-  user       User             @relation(fields: [userId], references: [id])
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId     String
 }
 

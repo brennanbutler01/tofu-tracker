@@ -56,11 +56,20 @@ corepack yarn verify:feedback-browser
 
 The 51 learning-session HTTP/database checks cover owner isolation, server-rendered pages, forged score rejection, duplicate/concurrent answers, persisted question order, deletion rules and course/activity completion. Browser checks exercise practice, activity and course answering on desktop and mobile, including failed-save recovery, persistence and pending written responses. The grading suite adds 84 HTTP/database checks and two browser workflows covering reviewer ownership, concurrent claiming, rejected nested writes, score recalculation, edited feedback, safe resource links, and desktop/mobile review completion with failed-save recovery. The metrics/feedback suite adds 35 HTTP/database assertions and desktop/mobile report and feedback workflows, including failure recovery. The authoring suite adds 51 HTTP/database checks for editing roles, field validation, concurrent edits, immutable content, option rules and archiving, plus persisted desktop/mobile creation/editing workflows. Existing 24 unit tests and 13 profile/permission checks remain in place. Continuous integration runs these against a production build and disposable PostgreSQL.
 
+## Visitor workspaces verified locally
+
+Visitor mode creates an independent synthetic administrator workspace with practice questions, a course, an activity, a learning track and a written response to review. Both visitor flags are false by default. Demo authentication uses opaque, HttpOnly session cookies with a fixed one-hour lifetime. Email sign-in is disabled in this mode.
+
+Curriculum, decks, questions, feedback, grading and metrics are scoped to the visitor. Demo administrators cannot change roles, access another account or delete ordinary users. Same-origin writes, 16 KiB bodies and atomic 1,000-request/500 KB write budgets bound each workspace. Creation removes expired workspaces and caps active workspaces at 100. Reset deletes linked visitor records, including written answers and review feedback.
+
+Six database integration cases, 29 HTTP checks, and desktop/mobile visitor workflows pass. Browser coverage includes learning, comments, grading, authoring, reload persistence and clean reset. Local lifecycle checks cover expiry, request/write limits and concurrent reset. All ordinary signed-in learning, grading, authoring, curriculum, metrics and feedback regression suites also pass with visitor mode disabled. There are now 25 unit tests.
+
+To exercise visitor mode locally, set `VISITOR_DEMO=true`, `NEXT_PUBLIC_VISITOR_DEMO=true`, and the matching `NEXTAUTH_URL` for both build and server. Run `verify:visitor-workspace` against the disposable local database, then `verify:visitor-api`, `verify:visitor-browser`, and `verify:visitor-lifecycle` against the running application. The lifecycle suite is deliberately local-only. The API/browser suites also allow the dedicated public demo hostname.
+
 ## Remaining
 
-- Add visitor scoping to curriculum, feedback, reporting and reviewer reads.
-- Add isolated visitor workspaces and synthetic content, including explicit ownership for shared course/activity/track models. Build complete expiry/reset cleanup and request budgets.
-- Verify author/reviewer and learner workflows on desktop/mobile, including failures and cross-visitor access.
-- Scan publication source/history and assets, deploy the real application on the personal Vercel project with dedicated free persistence, and repeat hosted verification.
+- Scan final publication source/history and browser assets.
+- Deploy the real application to the personal Vercel project with a dedicated free database, then repeat hosted API and desktop/mobile verification.
+- Confirm continuous integration for the visitor implementation.
 
-The earlier profile-only checks and static demo do not prove that the remaining backend is safe to expose. Real email sign-in still needs separately provisioned credentials; no historical credentials are reused.
+The hosted site still serves the static edition. Real email sign-in remains unverified and needs separately provisioned credentials. Historical credentials are never reused.

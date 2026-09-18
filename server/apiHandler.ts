@@ -2,6 +2,7 @@ import type { NextApiHandler, NextApiRequest, NextApiResponse } from 'next'
 import { z } from 'zod'
 import { Prisma } from '@prisma/client'
 import { getViewer } from './viewer'
+import { visitorEnabled, consumeVisitorRequest } from './visitorAccess'
 import type { Viewer } from './userHandlers'
 
 export class RequestError extends Error {
@@ -30,6 +31,10 @@ export function apiHandler(
             return
         }
         try {
+            if (visitorEnabled) {
+                const denied = await consumeVisitorRequest(req)
+                if (denied) throw new RequestError(denied.status, denied.error)
+            }
             const viewer = await getViewer(req, res)
             if (!viewer) throw new RequestError(401, 'Sign in required')
             if (req.body && Buffer.byteLength(JSON.stringify(req.body)) > 32768)

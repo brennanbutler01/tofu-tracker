@@ -1,3 +1,4 @@
+import { visitorQuestionScope } from './visitorScope'
 import { refreshAssessmentResults } from './assessmentResults'
 import prisma from '@/prisma/prisma'
 import { CorrectStatus, GameTypes, Prisma, QuestionType } from '@prisma/client'
@@ -37,7 +38,11 @@ export async function createFreeGame(
 ) {
     const ids = [...new Set(input.questionIds)]
     const questions = await prisma.question.findMany({
-        where: { id: { in: ids }, archived: false },
+        where: {
+            id: { in: ids },
+            archived: false,
+            AND: [visitorQuestionScope(userId)],
+        },
     })
     if (questions.length !== ids.length)
         throw new RequestError(404, 'One or more questions are unavailable')
@@ -136,7 +141,12 @@ export async function applyGameAction(
                         isCorrect,
                         userAnswer: option
                             ? { connect: { id: option.id } }
-                            : { create: { answer: action.answer } },
+                            : {
+                                  create: {
+                                      answer: action.answer,
+                                      ownerId: userId,
+                                  },
+                              },
                     },
                 },
             },

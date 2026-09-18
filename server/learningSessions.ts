@@ -1,3 +1,4 @@
+import { visitorOwnerScope, visitorDeckScope } from './visitorScope'
 import prisma from '@/prisma/prisma'
 import { GameTypes } from '@prisma/client'
 import { z } from 'zod'
@@ -35,7 +36,11 @@ export async function createActivitySession(
 ) {
     return prisma.$transaction(async tx => {
         const activity = await tx.activity.findFirst({
-            where: { id: activityId, archived: false },
+            where: {
+                id: activityId,
+                archived: false,
+                ...visitorOwnerScope(userId),
+            },
             include: {
                 questions: {
                     where: { archived: false },
@@ -81,10 +86,14 @@ export async function createCourseSession(courseId: string, userId: string) {
     return prisma.$transaction(async tx => {
         await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`
         const course = await tx.course.findFirst({
-            where: { id: courseId, archived: false },
+            where: {
+                id: courseId,
+                archived: false,
+                ...visitorOwnerScope(userId),
+            },
             include: {
                 decks: {
-                    where: { archived: false },
+                    where: { archived: false, ...visitorDeckScope(userId) },
                     orderBy: [{ created: 'asc' }, { id: 'asc' }],
                     include: {
                         questions: {

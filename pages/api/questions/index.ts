@@ -1,3 +1,4 @@
+import { visitorQuestionScope } from '@/server/visitorScope'
 import { apiHandler, identifier } from '@/server/apiHandler'
 import { requireReviewer } from '@/server/gradingSessions'
 import { questionSchema, updateDeckQuestion } from '@/server/deckAuthoring'
@@ -12,6 +13,7 @@ export default apiHandler(['GET', 'POST'], async (req, res, viewer) => {
             await prisma.question.findMany({
                 where: {
                     archived: false,
+                    AND: [visitorQuestionScope(viewer.userId)],
                     OR: [{ deck: { archived: false } }, { deckId: null }],
                 },
                 take: 500,
@@ -22,10 +24,14 @@ export default apiHandler(['GET', 'POST'], async (req, res, viewer) => {
         requireReviewer(viewer)
         const input = createSchema.parse(req.body)
         res.status(201).json(
-            await updateDeckQuestion(input.deckId, {
-                action: 'create',
-                question: input.question,
-            })
+            await updateDeckQuestion(
+                input.deckId,
+                {
+                    action: 'create',
+                    question: input.question,
+                },
+                viewer.userId
+            )
         )
     }
 })

@@ -1,3 +1,4 @@
+import { visitorDeckScope } from './visitorScope'
 import prisma from '@/prisma/prisma'
 import { Prisma, QuestionType, SimpleResponseInputTypes } from '@prisma/client'
 import { z } from 'zod'
@@ -125,23 +126,23 @@ export const decksWithQuestionCount =
             questions: { where: { archived: false } },
         },
     })
-export function getDeckQuestionCount() {
+export function getDeckQuestionCount(userId: string) {
     return prisma.deck.findMany({
-        where: { archived: false },
+        where: { archived: false, ...visitorDeckScope(userId) },
         take: 100,
         orderBy: { created: 'desc' },
         ...decksWithQuestionCount,
     })
 }
-export function getDeckQuestions(id: string) {
+export function getDeckQuestions(id: string, userId: string) {
     return prisma.deck.findFirst({
-        where: { id, archived: false },
+        where: { id, archived: false, ...visitorDeckScope(userId) },
         ...deckQuestionsShape,
     })
 }
-export function getDecksWithQuestionOptions() {
+export function getDecksWithQuestionOptions(userId: string) {
     return prisma.deck.findMany({
-        where: { archived: false },
+        where: { archived: false, ...visitorDeckScope(userId) },
         take: 100,
         orderBy: { created: 'asc' },
         ...deckQuestionsShape,
@@ -149,10 +150,13 @@ export function getDecksWithQuestionOptions() {
 }
 export async function requireActiveDeck(
     tx: Prisma.TransactionClient,
-    id: string
+    id: string,
+    userId: string
 ) {
     await tx.$queryRaw`SELECT id FROM "Deck" WHERE id = ${id} FOR UPDATE`
-    const deck = await tx.deck.findFirst({ where: { id, archived: false } })
+    const deck = await tx.deck.findFirst({
+        where: { id, archived: false, ...visitorDeckScope(userId) },
+    })
     if (!deck) throw new RequestError(404, 'Deck not found')
     return deck
 }
@@ -167,10 +171,11 @@ export async function createDeck(
 }
 export async function editDeck(
     id: string,
-    input: z.infer<typeof editDeckSchema>
+    input: z.infer<typeof editDeckSchema>,
+    userId: string
 ) {
     return prisma.$transaction(async tx => {
-        await requireActiveDeck(tx, id)
+        await requireActiveDeck(tx, id, userId)
         return tx.deck.update({
             where: { id },
             data: input,
@@ -178,9 +183,9 @@ export async function editDeck(
         })
     })
 }
-export async function archiveDeck(id: string) {
+export async function archiveDeck(id: string, userId: string) {
     return prisma.$transaction(async tx => {
-        await requireActiveDeck(tx, id)
+        await requireActiveDeck(tx, id, userId)
         // Preserve content referenced by existing games instead of deleting history.
         await tx.question.updateMany({
             where: { deckId: id },
@@ -189,9 +194,13 @@ export async function archiveDeck(id: string) {
         return tx.deck.update({ where: { id }, data: { archived: true } })
     })
 }
-export async function archiveDeckQuestion(deckId: string, questionId: string) {
+export async function archiveDeckQuestion(
+    deckId: string,
+    questionId: string,
+    userId: string
+) {
     return prisma.$transaction(async tx => {
-        await requireActiveDeck(tx, deckId)
+        await requireActiveDeck(tx, deckId, userId)
         const question = await tx.question.findFirst({
             where: { id: questionId, deckId, archived: false },
         })
@@ -209,10 +218,11 @@ export async function archiveDeckQuestion(deckId: string, questionId: string) {
 }
 export async function updateDeckQuestion(
     deckId: string,
-    action: z.infer<typeof deckQuestionActionSchema>
+    action: z.infer<typeof deckQuestionActionSchema>,
+    userId: string
 ) {
     return prisma.$transaction(async tx => {
-        await requireActiveDeck(tx, deckId)
+        await requireActiveDeck(tx, deckId, userId)
         if (action.action === 'create') {
             if (
                 (await tx.question.count({

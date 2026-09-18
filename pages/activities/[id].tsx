@@ -75,7 +75,7 @@ export const getServerSideProps = async (
     )
     if (session?.user?.role !== Roles.ADMIN) return { notFound: true }
     if (typeof context.query.id !== 'string') return { notFound: true }
-    const activity = await getActivity(context.query.id)
+    const activity = await getActivity(context.query.id, session.user.userId)
     if (!activity) return { notFound: true }
     return { props: { activity: serialize(activity), session } }
 }

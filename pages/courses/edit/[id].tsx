@@ -124,7 +124,7 @@ export const getServerSideProps = async (
     )
     if (session?.user?.role !== Roles.ADMIN) return { notFound: true }
     if (typeof context.query.id !== 'string') return { notFound: true }
-    const course = await getCourse(context.query.id)
+    const course = await getCourse(context.query.id, session.user.userId)
     if (!course) return { notFound: true }
     return { props: { course: serialize(course), session } }
 }

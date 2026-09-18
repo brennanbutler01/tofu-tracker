@@ -18,7 +18,7 @@ export default apiHandler(
             throw new RequestError(400, 'Invalid deck/question path')
         const deckId = identifier.parse(path[0])
         if (req.method === 'GET') {
-            const deck = await getDeckQuestions(deckId)
+            const deck = await getDeckQuestions(deckId, viewer.userId)
             if (!deck) throw new RequestError(404, 'Deck not found')
             res.status(200).json(deck)
         } else {
@@ -27,11 +27,13 @@ export default apiHandler(
                 req.method === 'DELETE'
                     ? await archiveDeckQuestion(
                           deckId,
-                          identifier.parse(path[1])
+                          identifier.parse(path[1]),
+                          viewer.userId
                       )
                     : await updateDeckQuestion(
                           deckId,
-                          deckQuestionActionSchema.parse(req.body)
+                          deckQuestionActionSchema.parse(req.body),
+                          viewer.userId
                       )
             )
         }

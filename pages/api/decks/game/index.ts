@@ -8,6 +8,6 @@ export type DecksWithQuestionOptions = Prisma.DeckGetPayload<
     typeof deckQuestionsShape
 >
 export { getDecksWithQuestionOptions } from '@/server/deckAuthoring'
-export default apiHandler(['GET'], async (_req, res) => {
-    res.status(200).json(await getDecksWithQuestionOptions())
+export default apiHandler(['GET'], async (_req, res, viewer) => {
+    res.status(200).json(await getDecksWithQuestionOptions(viewer.userId))
 })

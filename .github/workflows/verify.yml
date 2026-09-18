@@ -8,7 +8,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
@@ -45,3 +45,23 @@ jobs:
           corepack yarn verify:curriculum
           corepack yarn verify:question-feedback
           corepack yarn verify:feedback-browser
+      - name: Verify disposable visitor workspaces
+        env:
+          DATABASE_URL: postgresql://demo:local-demo-only@127.0.0.1:5197/tofu_tracker
+          LOCAL_API_URL: http://127.0.0.1:5221
+          NEXTAUTH_URL: http://127.0.0.1:5221
+          VISITOR_DEMO: 'true'
+          NEXT_PUBLIC_VISITOR_DEMO: 'true'
+        run: |
+          corepack yarn verify:visitor-workspace
+          corepack yarn build
+          corepack yarn start --hostname 127.0.0.1 --port 5221 > /tmp/tofu-tracker-visitor.log 2>&1 &
+          visitor_pid=$!
+          trap 'kill "$visitor_pid"' EXIT
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:5221/api/auth/session > /dev/null; then break; fi
+            sleep 1
+          done
+          corepack yarn verify:visitor-api
+          corepack yarn verify:visitor-browser
+          corepack yarn verify:visitor-lifecycle

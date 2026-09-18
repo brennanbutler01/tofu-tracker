@@ -12,15 +12,19 @@ export default apiHandler(
     async (req, res, viewer) => {
         const id = identifier.parse(req.query.id)
         if (req.method === 'GET') {
-            const record = await findOneTrack(id)
+            const record = await findOneTrack(id, viewer.userId)
             if (!record) throw new RequestError(404, 'Content not found')
             res.status(200).json(record)
         } else {
             requireReviewer(viewer)
             res.status(200).json(
                 req.method === 'DELETE'
-                    ? await archiveTrack(id)
-                    : await editTrack(id, editTrackSchema.parse(req.body))
+                    ? await archiveTrack(id, viewer.userId)
+                    : await editTrack(
+                          id,
+                          editTrackSchema.parse(req.body),
+                          viewer.userId
+                      )
             )
         }
     }

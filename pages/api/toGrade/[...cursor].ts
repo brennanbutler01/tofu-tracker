@@ -7,6 +7,9 @@ export default apiHandler(['GET'], async (req, res, viewer) => {
     if (!Array.isArray(req.query.cursor) || req.query.cursor.length !== 1)
         throw new RequestError(400, 'Invalid grading cursor')
     res.status(200).json(
-        await getAnswersToGrade(identifier.parse(req.query.cursor[0]))
+        await getAnswersToGrade(
+            viewer.userId,
+            identifier.parse(req.query.cursor[0])
+        )
     )
 })

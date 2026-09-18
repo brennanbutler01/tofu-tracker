@@ -1,3 +1,8 @@
+import {
+    visitorOwnerScope,
+    visitorDeckScope,
+    visitorQuestionScope,
+} from './visitorScope'
 import prisma from '@/prisma/prisma'
 import { CourseLevel, Prisma } from '@prisma/client'
 import { z } from 'zod'
@@ -77,45 +82,45 @@ export const learningTrackWithOrderedCourses =
             },
         },
     })
-export function getCourses() {
+export function getCourses(userId: string) {
     return prisma.course.findMany({
-        where: { archived: false },
+        where: { archived: false, ...visitorOwnerScope(userId) },
         take: 100,
         orderBy: { created: 'asc' },
         ...coursesWithDecks,
     })
 }
-export function getCourse(id: string) {
+export function getCourse(id: string, userId: string) {
     return prisma.course.findFirst({
-        where: { id, archived: false },
+        where: { id, archived: false, ...visitorOwnerScope(userId) },
         ...coursesWithDecks,
     })
 }
-export function getActivities() {
+export function getActivities(userId: string) {
     return prisma.activity.findMany({
-        where: { archived: false },
+        where: { archived: false, ...visitorOwnerScope(userId) },
         take: 100,
         orderBy: { created: 'asc' },
         ...activityWithQuestions,
     })
 }
-export function getActivity(id: string) {
+export function getActivity(id: string, userId: string) {
     return prisma.activity.findFirst({
-        where: { id, archived: false },
+        where: { id, archived: false, ...visitorOwnerScope(userId) },
         ...activityWithQuestions,
     })
 }
-export function getLearningTracks() {
+export function getLearningTracks(userId: string) {
     return prisma.learningTrack.findMany({
-        where: { archived: false },
+        where: { archived: false, ...visitorOwnerScope(userId) },
         take: 100,
         orderBy: { created: 'asc' },
         ...learningTrackWithOrderedCourses,
     })
 }
-export function findOneTrack(id: string) {
+export function findOneTrack(id: string, userId: string) {
     return prisma.learningTrack.findFirst({
-        where: { id, archived: false },
+        where: { id, archived: false, ...visitorOwnerScope(userId) },
         ...learningTrackWithOrderedCourses,
     })
 }
@@ -125,11 +130,16 @@ async function lockCurriculum(tx: Prisma.TransactionClient) {
 }
 async function validateCourseSelection(
     tx: Prisma.TransactionClient,
-    courseIds: string[]
+    courseIds: string[],
+    userId: string
 ) {
     if (
         (await tx.course.count({
-            where: { id: { in: courseIds }, archived: false },
+            where: {
+                id: { in: courseIds },
+                archived: false,
+                ...visitorOwnerScope(userId),
+            },
         })) !== courseIds.length
     )
         throw new RequestError(404, 'One or more courses are unavailable')
@@ -138,18 +148,23 @@ async function validateCourse(
     tx: Prisma.TransactionClient,
     id: string | undefined,
     preReqs: string[],
-    deckIds: string[]
+    deckIds: string[],
+    userId: string
 ) {
-    await validateCourseSelection(tx, preReqs)
+    await validateCourseSelection(tx, preReqs, userId)
     if (
         (await tx.deck.count({
-            where: { id: { in: deckIds }, archived: false },
+            where: {
+                id: { in: deckIds },
+                archived: false,
+                ...visitorDeckScope(userId),
+            },
         })) !== deckIds.length
     )
         throw new RequestError(404, 'One or more decks are unavailable')
     if (!id) return
     const courses = await tx.course.findMany({
-        where: { archived: false },
+        where: { archived: false, ...visitorOwnerScope(userId) },
         select: { id: true, preReqs: true },
     })
     const graph = new Map(courses.map(course => [course.id, course.preReqs]))
@@ -168,7 +183,7 @@ export async function createCourse(userId: string, input: CourseInput) {
     return prisma.$transaction(async tx => {
         await lockCurriculum(tx)
         const { deckIds, ...fields } = input
-        await validateCourse(tx, undefined, fields.preReqs, deckIds)
+        await validateCourse(tx, undefined, fields.preReqs, deckIds, userId)
         return tx.course.create({
             data: {
                 ...fields,
@@ -181,12 +196,13 @@ export async function createCourse(userId: string, input: CourseInput) {
 }
 export async function editCourse(
     id: string,
-    input: z.infer<typeof editCourseSchema>
+    input: z.infer<typeof editCourseSchema>,
+    userId: string
 ) {
     return prisma.$transaction(async tx => {
         await lockCurriculum(tx)
         const current = await tx.course.findFirst({
-            where: { id, archived: false },
+            where: { id, archived: false, ...visitorOwnerScope(userId) },
             ...coursesWithDecks,
         })
         if (!current) throw new RequestError(404, 'Course not found')
@@ -195,7 +211,8 @@ export async function editCourse(
             tx,
             id,
             fields.preReqs ?? current.preReqs,
-            deckIds ?? current.decks.map(deck => deck.id)
+            deckIds ?? current.decks.map(deck => deck.id),
+            userId
         )
         return tx.course.update({
             where: { id },
@@ -210,16 +227,20 @@ export async function editCourse(
         })
     })
 }
-export async function archiveCourse(id: string) {
+export async function archiveCourse(id: string, userId: string) {
     return prisma.$transaction(async tx => {
         await lockCurriculum(tx)
         const current = await tx.course.findFirst({
-            where: { id, archived: false },
+            where: { id, archived: false, ...visitorOwnerScope(userId) },
         })
         if (!current) throw new RequestError(404, 'Course not found')
         if (
             await tx.course.count({
-                where: { archived: false, preReqs: { has: id } },
+                where: {
+                    archived: false,
+                    preReqs: { has: id },
+                    ...visitorOwnerScope(userId),
+                },
             })
         )
             throw new RequestError(
@@ -237,13 +258,15 @@ export async function archiveCourse(id: string) {
 async function setActivityQuestions(
     tx: Prisma.TransactionClient,
     activityId: string,
-    questionIds: string[]
+    questionIds: string[],
+    userId: string
 ) {
     const sources = await tx.question.findMany({
         where: {
             id: { in: questionIds },
             archived: false,
             AND: [
+                visitorQuestionScope(userId),
                 { OR: [{ deckId: null }, { deck: { archived: false } }] },
                 {
                     OR: [
@@ -304,7 +327,7 @@ export async function createActivity(userId: string, input: ActivityInput) {
             const activity = await tx.activity.create({
                 data: { ...fields, ownerId: userId, questionOrder: [] },
             })
-            await setActivityQuestions(tx, activity.id, questionIds)
+            await setActivityQuestions(tx, activity.id, questionIds, userId)
             return tx.activity.findUniqueOrThrow({
                 where: { id: activity.id },
                 ...activityWithQuestions,
@@ -315,14 +338,19 @@ export async function createActivity(userId: string, input: ActivityInput) {
 }
 export async function editActivity(
     id: string,
-    input: z.infer<typeof editActivitySchema>
+    input: z.infer<typeof editActivitySchema>,
+    userId: string
 ) {
     return prisma.$transaction(
         async tx => {
             await tx.$queryRaw`SELECT id FROM "Activity" WHERE id = ${id} FOR UPDATE`
             if (
                 !(await tx.activity.findFirst({
-                    where: { id, archived: false },
+                    where: {
+                        id,
+                        archived: false,
+                        ...visitorOwnerScope(userId),
+                    },
                 }))
             )
                 throw new RequestError(404, 'Activity not found')
@@ -331,7 +359,8 @@ export async function editActivity(
                 where: { id },
                 data: { ...fields, updatedAt: new Date() },
             })
-            if (questionIds) await setActivityQuestions(tx, id, questionIds)
+            if (questionIds)
+                await setActivityQuestions(tx, id, questionIds, userId)
             return tx.activity.findUniqueOrThrow({
                 where: { id },
                 ...activityWithQuestions,
@@ -340,10 +369,14 @@ export async function editActivity(
         { timeout: 15000 }
     )
 }
-export async function archiveActivity(id: string) {
+export async function archiveActivity(id: string, userId: string) {
     return prisma.$transaction(async tx => {
         await tx.$queryRaw`SELECT id FROM "Activity" WHERE id = ${id} FOR UPDATE`
-        if (!(await tx.activity.findFirst({ where: { id, archived: false } })))
+        if (
+            !(await tx.activity.findFirst({
+                where: { id, archived: false, ...visitorOwnerScope(userId) },
+            }))
+        )
             throw new RequestError(404, 'Activity not found')
         await tx.question.updateMany({
             where: { activityId: id, deckId: null },
@@ -360,7 +393,7 @@ export async function createTrack(userId: string, input: TrackInput) {
     return prisma.$transaction(async tx => {
         await lockCurriculum(tx)
         const { courseIds, ...fields } = input
-        await validateCourseSelection(tx, courseIds)
+        await validateCourseSelection(tx, courseIds, userId)
         return tx.learningTrack.create({
             data: {
                 ...fields,
@@ -379,19 +412,20 @@ export async function createTrack(userId: string, input: TrackInput) {
 }
 export async function editTrack(
     id: string,
-    input: z.infer<typeof editTrackSchema>
+    input: z.infer<typeof editTrackSchema>,
+    userId: string
 ) {
     return prisma.$transaction(async tx => {
         await lockCurriculum(tx)
         if (
             !(await tx.learningTrack.findFirst({
-                where: { id, archived: false },
+                where: { id, archived: false, ...visitorOwnerScope(userId) },
             }))
         )
             throw new RequestError(404, 'Learning track not found')
         const { courseIds, ...fields } = input
         if (courseIds) {
-            await validateCourseSelection(tx, courseIds)
+            await validateCourseSelection(tx, courseIds, userId)
             await tx.courseOrder.deleteMany({ where: { learningTrackId: id } })
         }
         return tx.learningTrack.update({
@@ -414,12 +448,12 @@ export async function editTrack(
         })
     })
 }
-export async function archiveTrack(id: string) {
+export async function archiveTrack(id: string, userId: string) {
     return prisma.$transaction(async tx => {
         await lockCurriculum(tx)
         if (
             !(await tx.learningTrack.findFirst({
-                where: { id, archived: false },
+                where: { id, archived: false, ...visitorOwnerScope(userId) },
             }))
         )
             throw new RequestError(404, 'Learning track not found')

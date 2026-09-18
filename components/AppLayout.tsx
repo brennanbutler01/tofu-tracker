@@ -1,3 +1,4 @@
+import DemoControls from './DemoControls'
 import {
     Col,
     Drawer,
@@ -104,7 +105,10 @@ interface ILayout {
 }
 
 //this component styles our pages and keeps a consistent layout throughout the application
-const AppLayout: React.FC<React.PropsWithChildren<ILayout>> = ({ children, adminOnly = false }) => {
+const AppLayout: React.FC<React.PropsWithChildren<ILayout>> = ({
+    children,
+    adminOnly = false,
+}) => {
     const { data: session, status } = useSession()
     const { pathname, push } = useRouter()
     const [feedbackVisible, setFeedbackVisible] = useState(false)
@@ -123,6 +127,7 @@ const AppLayout: React.FC<React.PropsWithChildren<ILayout>> = ({ children, admin
         <StyledLayout>
             {nav}
             <StyledContent>
+                <DemoControls />
                 <Row justify={'center'}>
                     {/*{session?.user?.role === Roles.ADMIN && (*/}
                     {/*  <Col span={20}>*/}
@@ -159,6 +164,7 @@ const AppLayout: React.FC<React.PropsWithChildren<ILayout>> = ({ children, admin
         <StyledLayout>
             {nav}
             <StyledContent>
+                <DemoControls />
                 <Row>
                     <Col span={24}>
                         <Result
@@ -178,6 +184,7 @@ const AppLayout: React.FC<React.PropsWithChildren<ILayout>> = ({ children, admin
         <StyledLayout>
             {nav}
             <StyledContent>
+                <DemoControls />
                 <Row>
                     <Col span={24}>
                         <Result

@@ -1,3 +1,4 @@
+import { visitorEnabled } from '@/server/visitorAccess'
 // noinspection JSUnusedGlobalSymbols
 
 import { getProviders, signIn, useSession } from 'next-auth/react'
@@ -116,6 +117,8 @@ function SignIn({ providers }: ISignIn) {
 }
 
 export const getServerSideProps = async () => {
+    if (visitorEnabled)
+        return { redirect: { destination: '/demo', permanent: false } }
     const providers = await getProviders()
     return {
         props: {

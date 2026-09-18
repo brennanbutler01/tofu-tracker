@@ -72,6 +72,6 @@ export const getServerSideProps = async (
         authOptions
     )
     if (session?.user?.role !== Roles.ADMIN) return { notFound: true }
-    const decks = await getDeckQuestionCount()
+    const decks = await getDeckQuestionCount(session.user.userId)
     return { props: { decks: serialize(decks), session } }
 }

@@ -113,7 +113,7 @@ export const getServerSideProps = async (
         typeof context.query.id !== 'string'
     )
         return { notFound: true }
-    const deck = await getDeckQuestions(context.query.id)
+    const deck = await getDeckQuestions(context.query.id, session.user.userId)
     if (!deck) return { notFound: true }
     return { props: { deck: serialize(deck), session } }
 }

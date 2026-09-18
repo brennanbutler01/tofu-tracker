@@ -5,6 +5,9 @@ import { getQuestionMetrics, metricIdsSchema } from '@/server/metrics'
 export default apiHandler(['GET'], async (req, res, viewer) => {
     requireReviewer(viewer)
     res.status(200).json(
-        await getQuestionMetrics(metricIdsSchema.parse(req.query.id))
+        await getQuestionMetrics(
+            metricIdsSchema.parse(req.query.id),
+            viewer.userId
+        )
     )
 })

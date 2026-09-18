@@ -67,11 +67,15 @@ export default Index
 export const getServerSideProps: GetServerSideProps = async context => {
     let answersToGrade: Array<AnswersToGrade> = []
     let users: Array<User> = []
-    const session = await getServerSession(context.req, context.res, authOptions)
+    const session = await getServerSession(
+        context.req,
+        context.res,
+        authOptions
+    )
     if (session?.user?.role !== Roles.ADMIN) return { notFound: true }
     try {
-        answersToGrade = await getInitialAnswersToGrade()
-        users = await getUsers()
+        answersToGrade = await getInitialAnswersToGrade(session.user.userId)
+        users = await getUsers(session.user.userId)
     } catch (err) {
         console.log('Error getting answers to grade', err)
     }

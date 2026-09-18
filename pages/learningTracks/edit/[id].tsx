@@ -117,7 +117,7 @@ export const getServerSideProps = async (
     )
     if (session?.user?.role !== Roles.ADMIN) return { notFound: true }
     if (typeof context.query.id !== 'string') return { notFound: true }
-    const track = await findOneTrack(context.query.id)
+    const track = await findOneTrack(context.query.id, session.user.userId)
     if (!track) return { notFound: true }
     return { props: { track: serialize(track), session } }
 }

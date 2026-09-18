@@ -23,7 +23,12 @@
         "verify:authoring": "node scripts/verify-authoring.mjs",
         "verify:curriculum": "node scripts/verify-curriculum.mjs",
         "verify:question-feedback": "node scripts/verify-question-feedback.mjs",
-        "verify:feedback-browser": "node scripts/verify-feedback-browser.mjs"
+        "verify:feedback-browser": "node scripts/verify-feedback-browser.mjs",
+        "verify:visitor-workspace": "jest --config jest.visitor.config.js --runInBand",
+        "verify:visitor-api": "node scripts/verify-visitor-api.mjs",
+        "verify:visitor-browser": "node scripts/verify-visitor-browser.mjs",
+        "verify:visitor-lifecycle": "node scripts/verify-visitor-lifecycle.mjs",
+        "deploy:visitor": "python3 scripts/deploy_visitor.py"
     },
     "dependencies": {
         "@ant-design/icons": "4.8.3",

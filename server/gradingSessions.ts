@@ -1,3 +1,4 @@
+import { visitorEnabled } from './visitorAccess'
 import prisma from '@/prisma/prisma'
 import { CorrectStatus, Prisma, Roles } from '@prisma/client'
 import { z } from 'zod'
@@ -64,9 +65,10 @@ export function getGradingSessions(userId: string) {
         ...fullGradingSession,
     })
 }
-export function getAnswersToGrade(cursor?: string) {
+export function getAnswersToGrade(userId: string, cursor?: string) {
     return prisma.gameAnswer.findMany({
         where: {
+            ...(visitorEnabled ? { playerId: userId } : {}),
             isCorrect: CorrectStatus.NEEDS_GRADED,
             gradingSessionId: null,
             ...(cursor ? { id: { gt: cursor } } : {}),
@@ -91,6 +93,7 @@ export async function createGradingSession(
         const answers = await tx.gameAnswer.findMany({
             where: {
                 id: { in: ids },
+                ...(visitorEnabled ? { playerId: userId } : {}),
                 isCorrect: CorrectStatus.NEEDS_GRADED,
                 gradingSessionId: null,
             },

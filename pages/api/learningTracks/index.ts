@@ -15,7 +15,8 @@ export {
     learningTrackWithOrderedCourses,
 } from '@/server/contentAuthoring'
 export default apiHandler(['GET', 'POST'], async (req, res, viewer) => {
-    if (req.method === 'GET') res.status(200).json(await getLearningTracks())
+    if (req.method === 'GET')
+        res.status(200).json(await getLearningTracks(viewer.userId))
     else {
         requireReviewer(viewer)
         res.status(201).json(

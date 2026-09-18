@@ -69,6 +69,6 @@ export const getServerSideProps = async (
         authOptions
     )
     if (session?.user?.role !== Roles.ADMIN) return { notFound: true }
-    const tracks = await getLearningTracks()
+    const tracks = await getLearningTracks(session.user.userId)
     return { props: { tracks: serialize(tracks), session } }
 }

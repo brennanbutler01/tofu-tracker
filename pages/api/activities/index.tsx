@@ -12,7 +12,8 @@ export type ActivityWithQuestion = Prisma.ActivityGetPayload<
 >
 export { getActivities, activityWithQuestions } from '@/server/contentAuthoring'
 export default apiHandler(['GET', 'POST'], async (req, res, viewer) => {
-    if (req.method === 'GET') res.status(200).json(await getActivities())
+    if (req.method === 'GET')
+        res.status(200).json(await getActivities(viewer.userId))
     else {
         requireReviewer(viewer)
         res.status(201).json(

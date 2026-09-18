@@ -285,7 +285,7 @@ export const getServerSideProps = async (
     }
 
     try {
-        decks = await getDecksWithQuestionOptions()
+        decks = await getDecksWithQuestionOptions(session.user.userId)
     } catch (err) {
         console.log(`Error getting decks... ${err}`)
     }
