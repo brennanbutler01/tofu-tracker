@@ -11,7 +11,9 @@ import QuestionTabs from '@/questions/QuestionTabs'
 import React from 'react'
 import { SuperJSONResult } from 'superjson/dist/types'
 import { getDeckQuestions } from '@/pages/api/decks/questions/[...path]'
-import { getSession } from 'next-auth/react'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/server/authOptions'
+import { Roles } from '@prisma/client'
 import { useDeckQuestionsSWR } from '@/services/decks/questions/useDeckQuestionsSWR'
 import { useRouter } from 'next/router'
 
@@ -101,23 +103,19 @@ const Deck: React.FC<IDeck> = ({ deck }) => {
 export const getServerSideProps = async (
     context: GetServerSidePropsContext
 ) => {
-    const { id } = context.query
-    let deck = null
-    const session = await getSession(context)
-    try {
-        //fetch our decks with questions
-        deck = await getDeckQuestions(id as string)
-        console.log('deck...', deck?.questions)
-    } catch (err) {
-        console.log('Error fetching Decks. ', err)
-    }
-
-    return {
-        props: {
-            deck: serialize(deck),
-            session,
-        },
-    }
+    const session = await getServerSession(
+        context.req,
+        context.res,
+        authOptions
+    )
+    if (
+        session?.user?.role !== Roles.ADMIN ||
+        typeof context.query.id !== 'string'
+    )
+        return { notFound: true }
+    const deck = await getDeckQuestions(context.query.id)
+    if (!deck) return { notFound: true }
+    return { props: { deck: serialize(deck), session } }
 }
 
 export default Deck

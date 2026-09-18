@@ -6,7 +6,7 @@ import { Models } from '@/utils/message.utils'
 const { confirm } = Modal
 
 interface IDeleteItem {
-    onDelete: () => Promise<void>
+    onDelete: () => Promise<void | boolean>
     model: Models
     button?: boolean
     textButton?: boolean
@@ -21,7 +21,10 @@ const showDeleteConfirm = ({ onDelete, model }: IDeleteItem) => {
             </>
         ),
         icon: <ExclamationCircleOutlined />,
-        onOk: onDelete,
+        onOk: async () => {
+            if ((await onDelete()) === false)
+                throw new Error('The item could not be removed')
+        },
         onCancel: () => Modal.destroyAll(),
     })
 }

@@ -63,11 +63,11 @@ const OptionModal: React.FC<IOptionModal> = ({
                 layout={'vertical'}
                 onFinish={async values => {
                     const { options } = values
-                    onClose()
-                    await createDeckQuestionOptions({
+                    const saved = await createDeckQuestionOptions({
                         questionId: question.id,
                         options,
                     })
+                    if (saved) onClose()
                 }}
             >
                 <OptionsFormWrapper>

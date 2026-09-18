@@ -10,7 +10,9 @@ import DeckTabs from '@/decks/DeckTabs'
 import { GetServerSidePropsContext } from 'next'
 import HeadLayout from '@/components/HeadLayout'
 import { SuperJSONResult } from 'superjson/dist/types'
-import { getSession } from 'next-auth/react'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/server/authOptions'
+import { Roles } from '@prisma/client'
 import { useDecksSWR } from '@/services/decks/useDecksSWR'
 import { useRouter } from 'next/router'
 
@@ -22,7 +24,6 @@ interface IDecks {
 
 const Decks = ({ decks }: IDecks) => {
     const deserializedDecks = deserialize<Array<DeckWithQuestionCount>>(decks)
-    console.log(deserializedDecks)
 
     //pass our initial data to the decks hook
     const data = useDecksSWR(deserializedDecks)
@@ -65,16 +66,12 @@ export default Decks
 export const getServerSideProps = async (
     context: GetServerSidePropsContext
 ) => {
-    let decks: Array<DeckWithQuestionCount> = []
-    const session = await getSession(context)
-    try {
-        decks = await getDeckQuestionCount()
-    } catch (err) {
-        console.log('error getting decks', err)
-    }
-
-    console.log('decks', decks)
-    return {
-        props: { decks: serialize(decks), session },
-    }
+    const session = await getServerSession(
+        context.req,
+        context.res,
+        authOptions
+    )
+    if (session?.user?.role !== Roles.ADMIN) return { notFound: true }
+    const decks = await getDeckQuestionCount()
+    return { props: { decks: serialize(decks), session } }
 }

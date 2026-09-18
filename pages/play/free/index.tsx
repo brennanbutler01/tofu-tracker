@@ -34,7 +34,8 @@ import PlayConfigButtons from '@/components/game/PlayConfigButtons'
 import PlayTabs from '@/components/game/PlayTabs'
 import { QuestionWithOptions } from '@/pages/decks/[id]'
 import { SuperJSONResult } from 'superjson/dist/types'
-import { getSession } from 'next-auth/react'
+import { getServerSession } from 'next-auth/next'
+import { authOptions } from '@/server/authOptions'
 import prisma from '@/prisma/prisma'
 import { useGameCRUD } from '@/services/games/useGameCRUD'
 import { useGameDeckSWR } from '@/services/decks/game/useGameDeckSWR'
@@ -263,28 +264,17 @@ export default Index
 export const getServerSideProps = async (
     context: GetServerSidePropsContext
 ) => {
-    const session = await getSession(context)
+    const session = await getServerSession(
+        context.req,
+        context.res,
+        authOptions
+    )
+    if (!session?.user?.userId)
+        return { redirect: { destination: '/auth/signin', permanent: false } }
     let decks: Array<DecksWithQuestionOptions> = []
     let unfinishedGames: Array<GameWithOptions> = []
     let finishedGames: Array<GameWithOptions> = []
     let gradedResponses: Array<GradedUserResponse> = []
-
-    console.log(
-        'games',
-        await prisma.gameSession.findMany({
-            where: {
-                userId: session?.user?.userId,
-            },
-            include: {
-                answerHistory: true,
-                questions: {
-                    include: {
-                        options: true,
-                    },
-                },
-            },
-        })
-    )
 
     try {
         gradedResponses = await getGradedResponsesForUser(

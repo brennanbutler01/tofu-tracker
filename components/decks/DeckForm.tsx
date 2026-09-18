@@ -89,10 +89,18 @@ const DeckForm = ({ editingDeck }: DeckProps) => {
                         //if we are editing our deck, we should update our deck
                         if (editingDeck) {
                             // update deck
-                            await updateDeckWithQuestions(values)
+                            const saved = await updateDeckWithQuestions(values)
+                            if (!saved) {
+                                setLoading(false)
+                                return
+                            }
                         } else {
                             //else we will make a new deck
                             const newId = await createDeck(values)
+                            if (!newId) {
+                                setLoading(false)
+                                return
+                            }
                             notification.open({
                                 message: 'Deck Created',
                                 type: 'success',

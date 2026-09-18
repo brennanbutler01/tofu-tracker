@@ -1,51 +1,31 @@
-import { NextApiHandler } from 'next'
-import { Methods } from '@/services/http'
+import { apiHandler, identifier } from '@/server/apiHandler'
+import { requireReviewer } from '@/server/gradingSessions'
+import { questionSchema, updateDeckQuestion } from '@/server/deckAuthoring'
 import prisma from '@/prisma/prisma'
-import { getSession } from 'next-auth/react'
-
-const handler: NextApiHandler = async (req, res) => {
-    const { method } = req
-    const session = await getSession({ req })
-
-    if (session?.user) {
-        switch (method) {
-            case Methods.GET:
-                try {
-                    const questions = await prisma.question.findMany()
-
-                    res.status(200).json(questions)
-                } catch (err) {
-                    res.status(403).json({
-                        err: `Error while getting questions : Error: ${err}`,
-                    })
-                }
-                break
-            case Methods.POST:
-                try {
-                    const newQuestion = await prisma.question.create({
-                        data: {
-                            ...req.body,
-                        },
-                    })
-
-                    res.status(200).json(newQuestion)
-                } catch (err) {
-                    console.log(err)
-                    res.status(403).json({
-                        err: `Error while creating question. Error : ${err}`,
-                    })
-                }
-                break
-            default:
-                res.status(403).json({
-                    err: `${method} requests are not supported by this api endpoint.`,
-                })
-        }
-    } else {
-        res.status(401).json({
-            err: 'You must be an authorized user to view this endpoint. Please sign-in',
-        })
+import { z } from 'zod'
+const createSchema = z
+    .object({ deckId: identifier, question: questionSchema })
+    .strict()
+export default apiHandler(['GET', 'POST'], async (req, res, viewer) => {
+    if (req.method === 'GET')
+        res.status(200).json(
+            await prisma.question.findMany({
+                where: {
+                    archived: false,
+                    OR: [{ deck: { archived: false } }, { deckId: null }],
+                },
+                take: 500,
+                orderBy: { created: 'asc' },
+            })
+        )
+    else {
+        requireReviewer(viewer)
+        const input = createSchema.parse(req.body)
+        res.status(201).json(
+            await updateDeckQuestion(input.deckId, {
+                action: 'create',
+                question: input.question,
+            })
+        )
     }
-}
-
-export default handler
+})

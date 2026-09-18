@@ -69,7 +69,6 @@ const QuestionForm = () => {
     const [questionType, setQuestionType] = useState<QuestionType>(
         QuestionType.TRUE_FALSE
     )
-    console.log('form', form.getFieldsValue())
 
     const [addExplanation, setAddExplanation] = useState(false)
 
@@ -128,10 +127,10 @@ const QuestionForm = () => {
     }, [form, simpleResponseInputType, formQuestionType])
 
     const submitForm = async (val: IQuestionForm) => {
-        console.log('question form vals', val)
         setLoading(true)
-        await createDeckQuestion(val)
+        const saved = await createDeckQuestion(val)
         setLoading(false)
+        if (!saved) return
         form.resetFields()
         setTimeout(() => {
             questionRef.current.focus()
@@ -398,6 +397,7 @@ const QuestionForm = () => {
                                 loading={loading}
                                 type={'primary'}
                                 htmlType={'submit'}
+                                aria-label='Create question'
                             >
                                 Create
                             </Button>

@@ -22,6 +22,14 @@ Question and course reports join answers to their actual questions and sessions 
 
 General user-feedback submissions accept only their form fields, derive authorship from the session, and return only the caller's feedback. Failed saves preserve the form. The graded-answer feed remains restricted to its learner and now has bounded reads and consistent method/error handling. This does not yet repair the separate question-comment/resource feedback routes.
 
+## Deck and question authoring repair
+
+Deck creation/editing and question commands require administrator access. Requests contain only supported fields and cannot move ownership, inject nested database writes or edit a question through an unrelated deck. Answer choices are bounded and unique; multiple-choice answers must match an available choice. True/false choices are generated consistently.
+
+Every question edit creates a new active version and archives the original. Existing games keep their question content, answer options and grading meaning. A concurrent edit using the replaced identifier fails instead of overwriting another edit. Connected activity ordering follows the new version for future sessions. Deck and question removal archives content, preserving both completed and in-progress attempts; active counts exclude archived versions.
+
+The editing forms retain values on failure, option/answer dialogs close only after accepted saves, and deck authoring pages check the administrator role before rendering. The practice page redirects unauthenticated visitors before loading user history.
+
 ## Verification
 
 Use Node 24, pinned Yarn, and `corepack yarn local:setup`. Start the application on loopback port 5220 with `NEXTAUTH_URL=http://127.0.0.1:5220`. Then run:
@@ -32,13 +40,14 @@ corepack yarn verify:learning
 corepack yarn verify:learning-browser
 corepack yarn verify:grading
 corepack yarn verify:metrics-feedback
+corepack yarn verify:authoring
 ```
 
-The 51 learning-session HTTP/database checks cover owner isolation, server-rendered pages, forged score rejection, duplicate/concurrent answers, persisted question order, deletion rules and course/activity completion. Browser checks exercise practice, activity and course answering on desktop and mobile, including failed-save recovery, persistence and pending written responses. The grading suite adds 82 HTTP/database checks and two browser workflows covering reviewer ownership, concurrent claiming, rejected nested writes, score recalculation, edited feedback, safe resource links, and desktop/mobile review completion with failed-save recovery. The metrics/feedback suite adds 35 HTTP/database assertions and desktop/mobile report and feedback workflows, including failure recovery. Existing 24 unit tests and 13 profile/permission checks remain in place. Continuous integration runs these against a production build and disposable PostgreSQL.
+The 51 learning-session HTTP/database checks cover owner isolation, server-rendered pages, forged score rejection, duplicate/concurrent answers, persisted question order, deletion rules and course/activity completion. Browser checks exercise practice, activity and course answering on desktop and mobile, including failed-save recovery, persistence and pending written responses. The grading suite adds 82 HTTP/database checks and two browser workflows covering reviewer ownership, concurrent claiming, rejected nested writes, score recalculation, edited feedback, safe resource links, and desktop/mobile review completion with failed-save recovery. The metrics/feedback suite adds 35 HTTP/database assertions and desktop/mobile report and feedback workflows, including failure recovery. The authoring suite adds 51 HTTP/database checks for editing roles, field validation, concurrent edits, immutable content, option rules and archiving, plus persisted desktop/mobile creation/editing workflows. Existing 24 unit tests and 13 profile/permission checks remain in place. Continuous integration runs these against a production build and disposable PostgreSQL.
 
 ## Remaining
 
-- Secure authoring, deck/question editing, course/learning-track ordering and their rendered pages. Existing raw nested writes outside the repaired session routes must not reach hosting.
+- Secure activity/course/learning-track authoring, ordering and their rendered pages. Existing raw nested writes outside the repaired routes must not reach hosting.
 - Repair question feedback/comment/resource writes and add visitor scoping to reporting and reviewer reads.
 - Add isolated visitor workspaces and synthetic content, including explicit ownership for shared course/activity/track models. Build complete expiry/reset cleanup and request budgets.
 - Verify author/reviewer and learner workflows on desktop/mobile, including failures and cross-visitor access.

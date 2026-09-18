@@ -23,7 +23,7 @@ interface IDeckCard {
 interface IDelete {
     deck: DeckWithQuestionCount
     role: Roles
-    onDelete: (deck: Deck) => Promise<void>
+    onDelete: (deck: Deck) => Promise<boolean>
     setIsDeleting: React.Dispatch<React.SetStateAction<boolean>>
 }
 
@@ -35,13 +35,15 @@ const adminDelete = ({ deck, onDelete, setIsDeleting, role }: IDelete) => {
                 <DeleteItem
                     onDelete={async () => {
                         setIsDeleting(true)
-                        await onDelete(deck)
+                        const removed = await onDelete(deck)
                         setIsDeleting(false)
+                        return removed
                     }}
                     key={'delete'}
                     model={Models.DECK}
                 />,
-                <Link legacyBehavior
+                <Link
+                    legacyBehavior
                     href={`/decks/${deck.id}`}
                     passHref={true}
                     key={'question'}

@@ -64,11 +64,11 @@ const AnswerForm = ({ editing, onClose, values }: IAnswerForm) => {
             initialValues={{ correctAnswer: values.correctAnswer }}
             onFinish={async formValues => {
                 if (editing) {
-                    onClose()
-                    await updateDeckQuestionCorrectAnswer({
+                    const saved = await updateDeckQuestionCorrectAnswer({
                         id: editing,
                         ...formValues,
                     })
+                    if (saved) onClose()
                 }
             }}
         >
