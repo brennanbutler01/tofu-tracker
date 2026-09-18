@@ -1,14 +1,11 @@
-import { Prisma } from '@prisma/client'
+import type { UserFeedback } from '@prisma/client'
+import type { IFeedbackForm } from '@/components/userFeedback/FeedbackForm'
 import { http } from '../http'
-
-class UserFeedbackService {
-    private FEEDBACK_ENDPOINT = '/userFeedback'
-
-    createUserFeedback = async (userFeedback: Prisma.UserFeedbackCreateInput) =>
-        await http.post<Prisma.UserFeedbackCreateInput>(
-            this.FEEDBACK_ENDPOINT,
-            userFeedback
-        )
+export const userFeedbackService = {
+    createUserFeedback: (data: IFeedbackForm) =>
+        http.request<UserFeedback>({
+            method: 'POST',
+            url: '/userFeedback',
+            data,
+        }),
 }
-
-export const userFeedbackService = new UserFeedbackService()

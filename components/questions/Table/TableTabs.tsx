@@ -1,14 +1,13 @@
 import { Tabs } from 'antd'
 import AnswerTable from '@/questions/Table/AnswerTable'
-import React, { useEffect, useState } from 'react'
+import React from 'react'
+import { useSession } from 'next-auth/react'
 import { QuestionWithOptions } from '@/pages/decks/[id]'
 import styled from 'styled-components'
-import { QuestionType } from '@prisma/client'
+import { QuestionType, Roles } from '@prisma/client'
 import FreeResponseAnswer from '@/questions/Table/FreeResponseAnswer'
 import SimpleResponseAnswer from '@/questions/Table/SimpleResponseAnswer'
 import { QuestionStatsByUser } from '../QuestionStatsByUser'
-import { http } from '@/services/http'
-import { IQuestionByUserData } from '@/components/metrics/QuestionByUser'
 const { TabPane } = Tabs
 
 export interface ITableTabs {
@@ -38,29 +37,7 @@ const TabWrapper = styled.div`
 `
 
 const TableTabs = ({ record }: ITableTabs) => {
-    const [tableData, setTableData] = useState<IQuestionByUserData[]>([])
-
-    useEffect(() => {
-        let isSubscribed = true
-        const fetchData = async () => {
-            const data = await http
-                .get<Array<IQuestionByUserData>>(
-                    `/metrics/question/${record.id}`
-                )
-                .then(res => res.data)
-
-            console.log('data', data)
-
-            if (isSubscribed) {
-                setTableData(data)
-            }
-        }
-        fetchData().catch(console.error)
-        return () => {
-            isSubscribed = false
-        }
-    }, [record])
-
+    const { data: session } = useSession()
     return (
         <TabWrapper>
             <Tabs>
@@ -80,9 +57,11 @@ const TableTabs = ({ record }: ITableTabs) => {
                         />
                     </TabPane>
                 )}
-                <TabPane tab={'Metrics'} key={'metrics'}>
-                    <QuestionStatsByUser id={record.id} />
-                </TabPane>
+                {session?.user?.role === Roles.ADMIN && (
+                    <TabPane tab={'Metrics'} key={'metrics'}>
+                        <QuestionStatsByUser id={record.id} />
+                    </TabPane>
+                )}
             </Tabs>
         </TabWrapper>
     )

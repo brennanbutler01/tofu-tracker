@@ -16,6 +16,12 @@ Only administrators can use the grading queue. Review sessions belong to their r
 
 Grading recalculates practice counters and course/activity results in the same transaction. An assessment cannot pass while a written answer remains ungraded, even if its automatic answers already meet the threshold. Editing a grade updates the result again. Critiques can be edited, resource links require HTTPS, failed saves preserve entered text, and review completion is derived on the server. The administrator queue also links back to unfinished reviews.
 
+## Metrics and user feedback repair
+
+Question and course reports join answers to their actual questions and sessions to their actual courses. Administrator-only report routes validate and bound selections, and the rendered metrics page also checks the role. Pending written responses and unfinished assessments are distinct from failures. Reports show exact counts alongside responsive charts and display request failures.
+
+General user-feedback submissions accept only their form fields, derive authorship from the session, and return only the caller's feedback. Failed saves preserve the form. The graded-answer feed remains restricted to its learner and now has bounded reads and consistent method/error handling. This does not yet repair the separate question-comment/resource feedback routes.
+
 ## Verification
 
 Use Node 24, pinned Yarn, and `corepack yarn local:setup`. Start the application on loopback port 5220 with `NEXTAUTH_URL=http://127.0.0.1:5220`. Then run:
@@ -25,14 +31,15 @@ LOCAL_API_URL=http://127.0.0.1:5220 corepack yarn verify:local
 corepack yarn verify:learning
 corepack yarn verify:learning-browser
 corepack yarn verify:grading
+corepack yarn verify:metrics-feedback
 ```
 
-The 51 learning-session HTTP/database checks cover owner isolation, server-rendered pages, forged score rejection, duplicate/concurrent answers, persisted question order, deletion rules and course/activity completion. Browser checks exercise practice, activity and course answering on desktop and mobile, including failed-save recovery, persistence and pending written responses. The grading suite adds 82 HTTP/database checks and two browser workflows covering reviewer ownership, concurrent claiming, rejected nested writes, score recalculation, edited feedback, safe resource links, and desktop/mobile review completion with failed-save recovery. Existing 24 unit tests and 13 profile/permission checks remain in place. Continuous integration runs these against a production build and disposable PostgreSQL.
+The 51 learning-session HTTP/database checks cover owner isolation, server-rendered pages, forged score rejection, duplicate/concurrent answers, persisted question order, deletion rules and course/activity completion. Browser checks exercise practice, activity and course answering on desktop and mobile, including failed-save recovery, persistence and pending written responses. The grading suite adds 82 HTTP/database checks and two browser workflows covering reviewer ownership, concurrent claiming, rejected nested writes, score recalculation, edited feedback, safe resource links, and desktop/mobile review completion with failed-save recovery. The metrics/feedback suite adds 35 HTTP/database assertions and desktop/mobile report and feedback workflows, including failure recovery. Existing 24 unit tests and 13 profile/permission checks remain in place. Continuous integration runs these against a production build and disposable PostgreSQL.
 
 ## Remaining
 
 - Secure authoring, deck/question editing, course/learning-track ordering and their rendered pages. Existing raw nested writes outside the repaired session routes must not reach hosting.
-- Review feedback, metrics and other routes for role and ownership checks, input validation, method handling and bounded reads/writes.
+- Repair question feedback/comment/resource writes and add visitor scoping to reporting and reviewer reads.
 - Add isolated visitor workspaces and synthetic content, including explicit ownership for shared course/activity/track models. Build complete expiry/reset cleanup and request budgets.
 - Verify author/reviewer and learner workflows on desktop/mobile, including failures and cross-visitor access.
 - Scan publication source/history and assets, deploy the real application on the personal Vercel project with dedicated free persistence, and repeat hosted verification.

@@ -1,46 +1,33 @@
 import prisma from '@/prisma/prisma'
-import { Methods } from '@/services/http'
-import { NextApiRequest, NextApiResponse } from 'next'
-import { getSession } from 'next-auth/react'
-
-export const getFeedback = async () => await prisma.userFeedback.findMany({})
-
-const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-    const { method } = req
-    const session = await getSession({ req })
-
-    if (session?.user) {
-        switch (method) {
-            case Methods.GET:
-                try {
-                    const feedback = await getFeedback()
-                    res.status(200).json(feedback)
-                } catch (err) {
-                    console.log(
-                        'There was an error getting user feedback - ',
-                        err
-                    )
-                    res.status(403).json({
-                        err: `There was an error getting user feedback - ${err}`,
-                    })
-                }
-                break
-            case Methods.POST:
-                try {
-                    const newFeedback = await prisma.userFeedback.create({
-                        data: req.body,
-                    })
-                    res.status(200).json(newFeedback)
-                } catch (err) {
-                    res.status(403).json({
-                        err: `There was an error creating feedback - ${err}`,
-                    })
-                }
-        }
-    } else {
-        res.status(401).json({
-            err: 'You must be authorized to view this api endpoint.',
-        })
-    }
-}
-export default handler
+import { apiHandler } from '@/server/apiHandler'
+import { FeedbackSeverity, FeedbackType } from '@prisma/client'
+import { z } from 'zod'
+import { randomUUID } from 'node:crypto'
+const feedbackSchema = z
+    .object({
+        subject: z.string().trim().min(1).max(200),
+        suggestion: z.string().trim().min(1).max(8000),
+        type: z.nativeEnum(FeedbackType),
+        severity: z.nativeEnum(FeedbackSeverity),
+    })
+    .strict()
+export const getFeedback = (userId: string) =>
+    prisma.userFeedback.findMany({
+        where: { userId },
+        orderBy: { created: 'desc' },
+        take: 100,
+    })
+export default apiHandler(['GET', 'POST'], async (req, res, viewer) => {
+    if (req.method === 'GET')
+        res.status(200).json(await getFeedback(viewer.userId))
+    else
+        res.status(201).json(
+            await prisma.userFeedback.create({
+                data: {
+                    ...feedbackSchema.parse(req.body),
+                    id: randomUUID(),
+                    userId: viewer.userId,
+                },
+            })
+        )
+})

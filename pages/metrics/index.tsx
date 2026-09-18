@@ -4,7 +4,9 @@ import AppLayout from '@/components/AppLayout'
 import { GetServerSidePropsContext } from 'next'
 import { MetricsBreadcrumbs } from '@/components/metrics/MetricsBreadcrumbs'
 import React, { useState } from 'react'
-import { getSession } from 'next-auth/react'
+import { getServerSession } from 'next-auth/next'
+import { Roles } from '@prisma/client'
+import { authOptions } from '@/server/authOptions'
 import { useRouter } from 'next/router'
 import QueryList, { Query } from '@/components/metrics/QueryList'
 import HeadLayout from '@/components/HeadLayout'
@@ -30,15 +32,13 @@ const Metrics = () => {
                             level={1}
                             style={{
                                 marginBottom: 0,
-                                whiteSpace: 'normal',
+                                whiteSpace: 'nowrap',
+                                fontSize: 32,
                                 wordWrap: 'normal',
                             }}
                         >
                             Metrics
                         </Title>
-                    }
-                    subTitle={
-                        'Customizable reports for all of your data needs.'
                     }
                     onBack={async () => await push('/')}
                 />
@@ -53,7 +53,7 @@ const Metrics = () => {
                             ) : query === Query.QuestionStats ? (
                                 <QuestionStats />
                             ) : (
-                                'none'
+                                'Select a report above to view results.'
                             )}
                         </StyledCard>
                     </Col>
@@ -68,9 +68,15 @@ export default Metrics
 export const getServerSideProps = async (
     context: GetServerSidePropsContext
 ) => {
+    const session = await getServerSession(
+        context.req,
+        context.res,
+        authOptions
+    )
+    if (session?.user?.role !== Roles.ADMIN) return { notFound: true }
     return {
         props: {
-            session: await getSession(context),
+            session,
         },
     }
 }

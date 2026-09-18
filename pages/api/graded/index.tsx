@@ -1,6 +1,4 @@
-import { NextApiRequest, NextApiResponse } from 'next'
-import { getSession } from 'next-auth/react'
-import { Methods } from '@/services/http'
+import { apiHandler } from '@/server/apiHandler'
 import prisma from '@/prisma/prisma'
 import { CorrectStatus, Prisma, QuestionType } from '@prisma/client'
 const userGradedResponses = Prisma.validator<Prisma.GameAnswerDefaultArgs>()({
@@ -24,6 +22,8 @@ export const getGradedResponsesForUser = async (
     userId: string
 ): Promise<Array<GradedUserResponse>> =>
     await prisma.gameAnswer.findMany({
+        take: 100,
+        orderBy: { created: 'desc' },
         where: {
             playerId: userId,
             AND: {
@@ -52,35 +52,6 @@ export const getGradedResponsesForUser = async (
         },
     })
 
-const handler = async (req: NextApiRequest, res: NextApiResponse) => {
-    const session = await getSession({ req })
-    const { method } = req
-
-    if (session?.user?.userId) {
-        switch (method) {
-            case Methods.GET:
-                try {
-                    const gradedResponses = await getGradedResponsesForUser(
-                        session?.user?.userId
-                    )
-                    res.status(200).json(gradedResponses)
-                } catch (err) {
-                    console.log('Error getting graded responses ' + err)
-                    res.status(403).json({
-                        err: `Error getting graded responses... ${err}`,
-                    })
-                }
-                break
-            default:
-                res.status(403).json({
-                    err: `Error - This api endpoint does not accept ${method} requests`,
-                })
-        }
-    } else {
-        res.status(401).json({
-            err: `You must be authorized to view this endpoint. Please signin.`,
-        })
-    }
-}
-
-export default handler
+export default apiHandler(['GET'], async (_req, res, viewer) => {
+    res.status(200).json(await getGradedResponsesForUser(viewer.userId))
+})

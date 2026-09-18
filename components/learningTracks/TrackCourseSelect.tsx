@@ -12,6 +12,9 @@ const TrackCourseSelect = ({ onChange, value }: ICourseSelect) => {
 
     return (
         <Select
+            style={{ width: '100%' }}
+            aria-label='Courses to report'
+            showSearch
             value={value}
             onChange={onChange}
             getPopupContainer={el => el.parentNode as HTMLElement}

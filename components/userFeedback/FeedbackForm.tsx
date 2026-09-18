@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useUserFeedbackCRUD } from '@/services/userFeedback/useUserFeedbackCRUD'
 import { FeedbackSeverity, FeedbackType } from '@prisma/client'
 import { Button, Form, Input, Select, Space } from 'antd'
@@ -18,16 +19,29 @@ interface IUserFeedback {
 }
 
 const FeedbackForm = ({ closeDrawer }: IUserFeedback) => {
+    const [saving, setSaving] = useState(false)
     const [form] = Form.useForm<IFeedbackForm>()
     const { createFeedback } = useUserFeedbackCRUD()
     return (
         <Form
             form={form}
             layout='vertical'
-            onFinish={async val => await createFeedback(val)}
+            onFinish={async val => {
+                setSaving(true)
+                const saved = await createFeedback(val)
+                setSaving(false)
+                if (saved) {
+                    form.resetFields()
+                    closeDrawer()
+                }
+            }}
         >
             <SelectContainer>
-                <Item name={'type'} label={<FormLabel label='Feedback Type' />}>
+                <Item
+                    rules={[{ required: true }]}
+                    name={'type'}
+                    label={<FormLabel label='Feedback Type' />}
+                >
                     <Select
                         placeholder='Feedback Type'
                         options={Object.values(FeedbackType).map(type => ({
@@ -39,6 +53,7 @@ const FeedbackForm = ({ closeDrawer }: IUserFeedback) => {
                     />
                 </Item>
                 <Item
+                    rules={[{ required: true }]}
                     name='severity'
                     label={<FormLabel label='Feedback Severity' />}
                 >
@@ -55,15 +70,28 @@ const FeedbackForm = ({ closeDrawer }: IUserFeedback) => {
                     />
                 </Item>
             </SelectContainer>
-            <Item name='subject' label={<FormLabel label='Subject' />}>
+            <Item
+                rules={[{ required: true, whitespace: true, max: 200 }]}
+                name='subject'
+                label={<FormLabel label='Subject' />}
+            >
                 <Input placeholder='Subject' />
             </Item>
-            <Item name='suggestion' label={<FormLabel label='Suggestion' />}>
+            <Item
+                rules={[{ required: true, whitespace: true, max: 8000 }]}
+                name='suggestion'
+                label={<FormLabel label='Suggestion' />}
+            >
                 <TextArea placeholder='Suggestion' />
             </Item>
             <Space>
                 <Item>
-                    <Button type='primary' htmlType='submit'>
+                    <Button
+                        type='primary'
+                        htmlType='submit'
+                        loading={saving}
+                        aria-label='Submit feedback'
+                    >
                         Submit
                     </Button>
                 </Item>

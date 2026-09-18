@@ -1,55 +1,34 @@
 import TrackCourseSelect from '@/components/learningTracks/TrackCourseSelect'
-import { useEffect, useState } from 'react'
-import { Col, Form, Space } from 'antd'
-import { SelectContainer } from '@/decks/DeckCategories'
-import styled from 'styled-components'
+import { useState } from 'react'
+import { Alert, Space, Spin } from 'antd'
+import { ReportControls } from '@/components/metrics/ReportControls'
 import { http } from '@/services/http'
-import PerformanceByCourseChart, {
-    ICourseChartData,
-} from '@/components/metrics/PerformanceByCourse/PerformanceByCourseChart'
-const { Item } = Form
-
-const StyledSelectContainer = styled(SelectContainer)`
-    &&& .ant-select {
-        width: 100%;
-    }
-`
-
-type CourseArray = Record<'courses', Array<string>>
-
-const PerformanceByCourse = () => {
-    const [value, setValue] = useState<Array<string>>([])
-
-    const [data, setData] = useState<Array<ICourseChartData>>([])
-    const [form] = Form.useForm<CourseArray>()
-
-    const fetchCourseData = async ({ courses }: CourseArray) => {
-        await http
-            .get<ICourseChartData[]>(
-                `/metrics/courses/${courses.map(course => `${course}/`)}`
-            )
-            .then(res => setData(res.data))
-            .catch(err => setData([]))
-    }
-
+import useSWR from 'swr'
+import { courseMetricSchema } from '@/utils/metricSchemas'
+import PerformanceByCourseChart from './PerformanceByCourseChart'
+export default function PerformanceByCourse() {
+    const [courses, setCourses] = useState<string[]>([])
+    const key = courses.length
+        ? '/metrics/courses/' + courses.map(encodeURIComponent).join('/')
+        : null
+    const { data, error } = useSWR(key, async url =>
+        courseMetricSchema.array().parse((await http.get<unknown>(url)).data)
+    )
     return (
-        <div style={{ width: '100%' }}>
-            <Space style={{ width: '100%' }} direction={'vertical'}>
-                <StyledSelectContainer>
-                    <Col span={24}>
-                        <Form onValuesChange={fetchCourseData} form={form}>
-                            <Item noStyle name={'courses'}>
-                                <TrackCourseSelect
-                                    value={value}
-                                    onChange={setValue}
-                                />
-                            </Item>
-                        </Form>
-                    </Col>
-                </StyledSelectContainer>
-                <PerformanceByCourseChart data={data} />
-            </Space>
-        </div>
+        <Space style={{ width: '100%' }} direction='vertical'>
+            <ReportControls>
+                <TrackCourseSelect value={courses} onChange={setCourses} />
+            </ReportControls>
+            {error ? (
+                <Alert
+                    type='error'
+                    message='Could not load course results. Try selecting the courses again.'
+                />
+            ) : key && !data ? (
+                <Spin />
+            ) : (
+                <PerformanceByCourseChart data={data ?? []} />
+            )}
+        </Space>
     )
 }
-export default PerformanceByCourse

@@ -1,4 +1,4 @@
-import { List } from 'antd'
+import { Button, List } from 'antd'
 import { StyledCard } from '@/components/game/QuizCard'
 import React from 'react'
 const { Item } = List
@@ -35,9 +35,10 @@ const QueryList = ({ setCurrentQuery }: IQueryList) => {
             dataSource={queryList}
             renderItem={query => (
                 <Item key={query.title}>
-                    <StyledCard hoverable onClick={query.setQuery}>
-                        {' '}
-                        {query.title}
+                    <StyledCard>
+                        <Button block onClick={query.setQuery}>
+                            {query.title}
+                        </Button>
                     </StyledCard>
                 </Item>
             )}

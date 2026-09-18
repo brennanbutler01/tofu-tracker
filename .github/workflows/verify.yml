@@ -40,3 +40,4 @@ jobs:
           corepack yarn verify:learning
           corepack yarn verify:learning-browser
           corepack yarn verify:grading
+          corepack yarn verify:metrics-feedback
