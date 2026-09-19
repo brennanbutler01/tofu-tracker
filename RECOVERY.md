@@ -43,12 +43,18 @@ Run the production server on loopback port 5196 after `yarn local:setup` and `ya
 
 ## Public portfolio demo, September 18
 
-The independent personal Vercel Hobby project is live at https://tofu-tracker-demo.vercel.app. It publishes only the static `portfolio-site/out` files, uses no server functions or configured provider secrets, and has no Git connection to the old hosted project. Five browser scenarios pass locally and on the public site: automatic feedback plus human review, a needs-improvement outcome, per-tab isolation/reset/reload, mobile layout without backend requests, and 404 responses for credential/server routes.
+The initial independent personal Vercel Hobby deployment at https://tofu-tracker-demo.vercel.app published only the static `portfolio-site/out` files, used no server functions or configured provider secrets, and had no Git connection to the old hosted project. Five browser scenarios passed locally and on that static edition: automatic feedback plus human review, a needs-improvement outcome, per-tab isolation/reset/reload, mobile layout without backend requests, and 404 responses for credential/server routes. The database-backed visitor deployment below now supersedes it; the static build remains for offline review.
 
 The demo shares answer normalization with the original quiz. Its 12 exported files passed the default secret scan and an exact comparison against the previously collected credential values. The original backend's dependency advisories do not disappear because the demo is hosted; the authenticated backend remains unsuitable for public hosting. `REVIEW.md` identifies the supported review scope.
 
 ## September 18 dependency and publication pass
 
-Upgraded to Next.js 16.3.4 and Prisma 7.10.0 with its PostgreSQL adapter. Both the original app and static demo build. Historical screenshots were removed from the publication source. See `DEPENDENCIES.md` for the current three Prisma development-tool advisories, which supersede earlier dependency counts. Public hosting remains a separate static demo with synthetic data and no backend credentials. The authenticated legacy app is for local review; the remaining backend and external-provider limitations above still apply.
+Upgraded to Next.js 16.3.4 and Prisma 7.10.0 with its PostgreSQL adapter. Both the original app and static demo build. Historical screenshots were removed from the publication source. See `DEPENDENCIES.md` for the current three Prisma development-tool advisories, which supersede earlier dependency counts. The static demo remains available for offline review; public hosting now uses the isolated visitor mode described below. Real-user authentication and external-provider limitations above still apply.
 
 Public source is published from an independent clean snapshot. Affected original repositories remain private, and their cached historical commits are not imported. Credential revocation is separate from source cleanup.
+
+## Database-backed visitor deployment
+
+The public site now runs the original application in an explicit visitor mode with a dedicated Neon free database. Each no-signup visitor receives an isolated synthetic administrator workspace, an opaque one-hour cookie, persisted learning and grading records, and complete reset. Visitor administrators cannot manage other accounts, and email sign-in is disabled.
+
+All 29 hosted API checks pass, covering real authentication, persistence, cross-workspace rejection, rendered-page authorization, and reset. Desktop and mobile browser workflows pass for learning, failed-save recovery, comments, human review, authoring, reload persistence, and reset. Expiry, request/write limits, capacity, and concurrent reset remain local-only lifecycle checks. See [BACKEND-READINESS.md](BACKEND-READINESS.md) for the complete verified boundary.
